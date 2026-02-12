@@ -166,15 +166,11 @@
         .card-name{font-size:12px;color:var(--text2);font-weight:500}
         .card-comment{font-size:11px;color:var(--orange);font-style:italic;background:rgba(251,146,60,.08);padding:2px 6px;border-radius:4px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .card-items-badge{font-size:10px;font-weight:600;color:var(--accent);background:rgba(240,192,0,.1);padding:2px 6px;border-radius:4px}
-        .money-row{display:flex;gap:12px;align-items:center;margin-top:6px;flex-wrap:wrap}
-        .money-tag{font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px}
-        .money-tag.venta{background:rgba(52,211,153,.1);color:var(--green)}
-        .money-tag.fee{background:rgba(248,113,113,.08);color:var(--red)}
-        .money-tag.neto{background:rgba(74,158,255,.1);color:var(--blue)}
-        .summary-banner{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin:0 16px 10px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;justify-content:center}
-        .summary-item{text-align:center}
-        .summary-val{font-size:18px;font-weight:700}
-        .summary-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-top:1px}
+        .products-toggle{margin-top:8px;font-family:var(--font);font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text3);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
+        .products-toggle:hover{border-color:var(--text3);color:var(--text2)}
+        .products-list{max-height:0;overflow:hidden;transition:max-height .2s ease}
+        .products-list.open{max-height:300px}
+        .products-inner{padding-top:6px;font-size:11px;color:var(--text2);line-height:1.6}
         .card-links{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
         .card-link{font-size:11px;font-weight:500;padding:5px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text2);transition:all .15s;display:inline-flex;align-items:center;gap:4px}
         .card-link:hover{border-color:var(--blue);color:var(--blue);text-decoration:none}
@@ -259,16 +255,16 @@
             <div class="stat-num">0</div><div class="stat-label">Todos</div>
         </div>
         <div class="stat-chip" data-s="pendiente" onclick="filtrarPorEstado('pendiente')" id="stat-pendiente">
-            <div class="stat-num">0</div><div class="stat-label">Pend</div>
+            <div class="stat-num">0</div><div class="stat-label">Pendiente</div>
         </div>
         <div class="stat-chip" data-s="en-camino" onclick="filtrarPorEstado('en-camino')" id="stat-en-camino">
-            <div class="stat-num">0</div><div class="stat-label">Camino</div>
+            <div class="stat-num">0</div><div class="stat-label">En camino</div>
         </div>
         <div class="stat-chip" data-s="entregado" onclick="filtrarPorEstado('entregado')" id="stat-entregado">
-            <div class="stat-num">0</div><div class="stat-label">Entreg</div>
+            <div class="stat-num">0</div><div class="stat-label">Entregado</div>
         </div>
         <div class="stat-chip" data-s="reprogramado" onclick="filtrarPorEstado('reprogramado')" id="stat-reprogramado">
-            <div class="stat-num">0</div><div class="stat-label">Reprog</div>
+            <div class="stat-num">0</div><div class="stat-label">Reprogramado</div>
         </div>
     </div>
     <div class="progress" id="progressBar"></div>
@@ -405,6 +401,10 @@ function toggleVista(){
 }
 function toggleSimpleDetails(i){
     const d=document.getElementById(`det-${i}`);
+    if(d)d.classList.toggle('open');
+}
+function toggleProducts(i){
+    const d=document.getElementById(`prod-${i}`);
     if(d)d.classList.toggle('open');
 }
 
@@ -659,21 +659,6 @@ function displayOrders(ft,custom=null){
     let html='';
     if(!orders.length){html='<div class="empty-state">Sin envíos con estos filtros</div>'}
     else{
-        // Daily summary
-        let sumVenta=0,sumFee=0,sumItems=0;
-        orders.forEach(({orders:ol,shipping})=>{
-            if(getOrderState(shipping)==='cancelado')return;
-            ol.forEach(o=>{sumVenta+=o.total_amount||0;o.order_items.forEach(i=>{sumFee+=i.sale_fee||0;sumItems+=i.quantity||1})});
-        });
-        const sumNeto=sumVenta-sumFee;
-        html+=`<div class="summary-banner">
-            <div class="summary-item"><div class="summary-val" style="color:var(--accent)">${orders.length}</div><div class="summary-label">Envíos</div></div>
-            <div class="summary-item"><div class="summary-val" style="color:var(--green)">$${Math.round(sumVenta).toLocaleString('es-AR')}</div><div class="summary-label">Venta</div></div>
-            <div class="summary-item"><div class="summary-val" style="color:var(--red)">$${Math.round(sumFee).toLocaleString('es-AR')}</div><div class="summary-label">Fee ML</div></div>
-            <div class="summary-item"><div class="summary-val" style="color:var(--blue)">$${Math.round(sumNeto).toLocaleString('es-AR')}</div><div class="summary-label">Neto</div></div>
-            <div class="summary-item"><div class="summary-val" style="color:var(--text2)">${sumItems}</div><div class="summary-label">Items</div></div>
-        </div>`;
-
         const estadoLabel={pendiente:'Pendiente','en-camino':'En camino',entregado:'Entregado',cancelado:'Cancelada',reprogramado:'Reprogramado'};
         orders.forEach(({orders:oList,shipping,cuentaNombre,cuentaColor},idx)=>{
             const state=getOrderState(shipping);
@@ -694,16 +679,10 @@ function displayOrders(ft,custom=null){
             const comp=oList[0]?.buyer?.nickname||'N/A';
             const oid=oList[0]?.id||'';const oUrl=`https://www.mercadolibre.com.ar/ventas/${oid}/detalle`;
 
-            // New data
             const receiverName=addr.receiver_name||'';
             const comment=(addr.comment||'').trim();
             const itemsShip=shipping.shipping_items?.length||oList.length;
-            const totalVenta=oList.reduce((s,o)=>s+o.total_amount,0);
-            const totalFee=oList.reduce((s,o)=>s+o.order_items.reduce((f,i)=>f+(i.sale_fee||0),0),0);
-            const neto=totalVenta-totalFee;
-
-            // Products list
-            const productos=shipping.shipping_items?.map(i=>`${i.description} x${i.quantity}`).join(', ')||'';
+            const productos=shipping.shipping_items||[];
 
             html+=`<div class="card ${state}" onclick="toggleSimpleDetails(${idx})">
                 <div class="card-cuenta ${cuentaColor}" title="${cuentaNombre}"></div>
@@ -711,19 +690,13 @@ function displayOrders(ft,custom=null){
                     <div class="card-zona">${zona}</div>
                     <div class="card-estado ${state}">${estadoTexto}</div>
                 </div>
-                <div class="card-sub">
-                    ${receiverName?`<span class="card-name">${receiverName}</span>`:''}
-                    ${itemsShip>1?`<span class="card-items-badge">${itemsShip} items</span>`:''}
-                    ${comment?`<span class="card-comment">${comment}</span>`:''}
-                </div>
                 <div class="card-details" id="det-${idx}">
                     <div class="card-detail-inner">
-                        <div class="money-row">
-                            <span class="money-tag venta">Venta $${Math.round(totalVenta).toLocaleString('es-AR')}</span>
-                            <span class="money-tag fee">Fee $${Math.round(totalFee).toLocaleString('es-AR')}</span>
-                            <span class="money-tag neto">Neto $${Math.round(neto).toLocaleString('es-AR')}</span>
+                        <div class="card-sub">
+                            ${receiverName?`<span class="card-name">${receiverName}</span>`:''}
+                            ${itemsShip>1?`<span class="card-items-badge">${itemsShip} items</span>`:''}
                         </div>
-                        ${productos?`<div style="margin-top:8px;font-size:11px;color:var(--text2);line-height:1.5">${shipping.shipping_items.map(i=>`<div>· ${i.description} <span style="color:var(--text3)">x${i.quantity}</span></div>`).join('')}</div>`:''}
+                        ${comment?`<div style="margin-top:6px"><span class="card-comment">${comment}</span></div>`:''}
                         <div class="detail-grid" style="margin-top:8px">
                             <div class="detail-item"><div class="detail-label">Dirección</div><div class="detail-val"><a href="${gmap}" target="_blank" onclick="event.stopPropagation()">${calle} ${num}, ${ciudad}</a></div></div>
                             <div class="detail-item"><div class="detail-label">Comprador</div><div class="detail-val">${comp}</div></div>
@@ -739,6 +712,8 @@ function displayOrders(ft,custom=null){
                         </div>
                         ${renderTracking(shipping)}
                         ${renderRepBadge(shipping)}
+                        ${productos.length?`<button class="products-toggle" onclick="event.stopPropagation();toggleProducts(${idx})">📦 Ver artículos (${productos.length})</button>
+                        <div class="products-list" id="prod-${idx}"><div class="products-inner">${productos.map(i=>`<div>· ${i.description} <span style="color:var(--text3)">x${i.quantity}</span></div>`).join('')}</div></div>`:''}
                         <div class="card-links">
                             <a href="${oUrl}" target="_blank" class="card-link" onclick="event.stopPropagation()">📋 #${oid}</a>
                             <a href="${gmap}" target="_blank" class="card-link" onclick="event.stopPropagation()">📍 Maps</a>
