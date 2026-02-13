@@ -3,785 +3,2776 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLEX — Mikra + Chaya</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+    <title>Envíos FLEX - Mikra + Chaya</title>
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FFE600">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FLEX Mikra">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        :root{
-            --bg:#0c0c0e;--card:#161618;--card2:#1e1e21;--border:#2a2a2e;
-            --text:#e8e8ec;--text2:#8e8e96;--text3:#56565e;
-            --accent:#f0c000;--blue:#4a9eff;
-            --purple:#a855f7;--cyan:#22d3ee;--green:#34d399;--red:#f87171;--orange:#fb923c;
-            --radius:10px;--font:'DM Sans',system-ui,sans-serif;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        body{font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
-        a{color:var(--blue);text-decoration:none}
-        a:hover{text-decoration:underline}
 
-        /* HEADER */
-        .header{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;backdrop-filter:blur(20px)}
-        .header-left{display:flex;align-items:center;gap:10px}
-        .logo{font-size:15px;font-weight:700;letter-spacing:-.02em;color:var(--accent)}
-        .badges{display:flex;gap:6px;flex-wrap:wrap}
-        .badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;background:var(--card2);color:var(--text2);border:1px solid var(--border);white-space:nowrap}
-        .badge.fecha{color:var(--orange);border-color:rgba(251,146,60,.25)}
-        .badge.caba{color:var(--purple);border-color:rgba(168,85,247,.25)}
-        .badge.prov{color:var(--cyan);border-color:rgba(34,211,238,.25)}
-        .header-actions{display:flex;gap:6px}
-        .icon-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .15s}
-        .icon-btn:hover{border-color:var(--text3);color:var(--text);background:var(--card2)}
-        .icon-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(240,192,0,.08)}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 10px;
+        }
 
-        /* TOOLS DRAWER */
-        .drawer{max-height:0;overflow:hidden;transition:max-height .3s ease;background:var(--card);border-bottom:1px solid var(--border)}
-        .drawer.open{max-height:300px}
-        .drawer-inner{padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-        .drawer-btn{font-family:var(--font);font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap}
-        .drawer-btn:hover{border-color:var(--text3);color:var(--text)}
-        .drawer-btn.warn{border-color:rgba(251,146,60,.3);color:var(--orange)}
-        .drawer-btn.purple{border-color:rgba(168,85,247,.3);color:var(--purple)}
-        .drawer-sep{width:1px;height:24px;background:var(--border);margin:0 4px}
-        input[type=date]{font-family:var(--font);font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text);cursor:pointer;color-scheme:dark}
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
 
-        /* STATS ROW */
-        .stats-row{display:flex;gap:2px;padding:10px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-        .stats-row::-webkit-scrollbar{display:none}
-        .stat-chip{flex-shrink:0;padding:8px 14px;border-radius:8px;background:var(--card);border:1px solid transparent;cursor:pointer;text-align:center;transition:all .15s;min-width:60px}
-        .stat-chip:hover{background:var(--card2)}
-        .stat-chip.active{border-color:var(--accent);background:rgba(240,192,0,.06)}
-        .stat-num{font-size:20px;font-weight:700;line-height:1}
-        .stat-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-top:3px}
-        .stat-chip[data-s="all"] .stat-num{color:var(--accent)}
-        .stat-chip[data-s="pendiente"] .stat-num{color:var(--purple)}
-        .stat-chip[data-s="en-camino"] .stat-num{color:var(--cyan)}
-        .stat-chip[data-s="entregado"] .stat-num{color:var(--green)}
-        .stat-chip[data-s="reprogramado"] .stat-num{color:var(--orange)}
+        h1 {
+            color: #FFE600;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 22px;
+        }
 
-        /* PROGRESS BAR */
-        .progress{height:4px;background:var(--card);margin:0 16px 6px;border-radius:4px;overflow:hidden;display:flex}
-        .prog-seg{height:100%;transition:width .4s}
-        .prog-seg.pendiente{background:var(--purple)}
-        .prog-seg.en-camino{background:var(--cyan)}
-        .prog-seg.entregado{background:var(--green)}
-        .prog-seg.reprogramado{background:var(--orange)}
+        .version-badge {
+            display: inline-block;
+            background: #3483FA;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
 
-        /* FILTER BAR */
-        .filter-bar{padding:6px 16px 10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-        .pill{font-family:var(--font);font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap}
-        .pill:hover{border-color:var(--text3)}
-        .pill.active{color:#fff}
-        .pill.all.active{background:var(--blue);border-color:var(--blue)}
-        .pill.mikra.active{background:var(--purple);border-color:var(--purple)}
-        .pill.chaya.active{background:var(--orange);border-color:var(--orange)}
-        .pill.cancel{color:var(--red);border-color:rgba(248,113,113,.2)}
-        .pill.cancel.active{background:var(--red);border-color:var(--red);color:#fff}
-        .pill-count{font-size:10px;opacity:.7;margin-left:3px}
+        .info-badges {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
 
-        /* ZONE SELECT */
-        .zone-select-wrap{position:relative;flex:1;min-width:180px;max-width:300px}
-        .zone-trigger{font-family:var(--font);width:100%;padding:6px 30px 6px 12px;font-size:12px;font-weight:500;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);cursor:pointer;text-align:left;appearance:none;position:relative}
-        .zone-trigger::after{content:'▾';position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none}
-        .zone-dd{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--card);border:1px solid var(--accent);border-radius:8px;max-height:260px;overflow-y:auto;z-index:200;display:none}
-        .zone-dd.open{display:block}
-        .zone-dd input{width:calc(100% - 16px);margin:8px;padding:6px 10px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:var(--font)}
-        .zone-dd-item{padding:8px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border);color:var(--text2);transition:background .1s}
-        .zone-dd-item:hover{background:var(--card2);color:var(--text)}
-        .zone-dd-item:last-child{border-bottom:none}
+        .info-badge {
+            background: #2a2a2a;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            border: 2px solid #444;
+        }
 
-        /* SORT ROW */
-        .sort-row{padding:0 16px 8px;display:flex;gap:4px;align-items:center;flex-wrap:wrap}
-        .sort-label{font-size:11px;color:var(--text3);font-weight:600;margin-right:4px}
-        .sort-btn{font-family:var(--font);font-size:11px;font-weight:500;padding:4px 10px;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--text3);cursor:pointer;transition:all .15s}
-        .sort-btn:hover{color:var(--text2)}
-        .sort-btn.active{background:var(--accent);color:#000;font-weight:600}
+        .info-badge.fecha {
+            background: #FF6B00;
+            border-color: #FF9800;
+        }
 
-        /* CONTENT */
-        .content{padding:0 16px 100px}
+        .info-badge.caba {
+            background: #9C27B0;
+            border-color: #ce93d8;
+        }
 
-        /* CARDS */
-        .card{background:var(--card);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px;border-left:3px solid var(--border);cursor:pointer;transition:background .15s;position:relative}
-        .card:hover{background:var(--card2)}
-        .card:active{background:var(--card2)}
-        .card.pendiente{border-left-color:var(--purple)}
-        .card.en-camino{border-left-color:var(--cyan)}
-        .card.entregado{border-left-color:var(--green)}
-        .card.cancelado{border-left-color:var(--red);opacity:.6}
-        .card.reprogramado{border-left-color:var(--orange)}
+        .info-badge.provincia {
+            background: #00897B;
+            border-color: #26A69A;
+        }
 
-        .card-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
-        .card-zona{font-size:14px;font-weight:600;color:var(--accent);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .card-estado{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
-        .card-estado.pendiente{background:rgba(168,85,247,.15);color:var(--purple)}
-        .card-estado.en-camino{background:rgba(34,211,238,.15);color:var(--cyan)}
-        .card-estado.entregado{background:rgba(52,211,153,.15);color:var(--green)}
-        .card-estado.cancelado{background:rgba(248,113,113,.15);color:var(--red)}
-        .card-estado.reprogramado{background:rgba(251,146,60,.15);color:var(--orange)}
+        .top-buttons {
+            text-align: center;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
 
-        .card-cuenta{position:absolute;top:14px;right:16px;width:8px;height:8px;border-radius:50%}
-        .card-cuenta.mikra{background:var(--purple)}
-        .card-cuenta.chaya{background:var(--orange)}
+        .tools-panel {
+            display: none;
+        }
 
-        /* EXPANDED DETAILS */
-        .card-details{max-height:0;overflow:hidden;transition:max-height .25s ease}
-        .card-details.open{max-height:600px}
-        .card-detail-inner{padding-top:12px;border-top:1px solid var(--border);margin-top:12px}
-        .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-        .detail-item{background:var(--bg);padding:8px 10px;border-radius:6px}
-        .detail-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:2px}
-        .detail-val{font-size:13px;color:var(--text)}
-        .detail-val.hoy{color:var(--orange);font-weight:600}
+        .tools-panel.open {
+            display: block;
+        }
 
-        /* TIMELINE */
-        .timeline{display:flex;gap:4px;margin-top:10px;align-items:center}
-        .tl-step{flex:1;text-align:center}
-        .tl-dot{width:10px;height:10px;border-radius:50%;margin:0 auto 3px;border:2px solid var(--border)}
-        .tl-dot.done{background:var(--green);border-color:var(--green);box-shadow:0 0 6px rgba(52,211,153,.4)}
-        .tl-line{flex:0 0 20px;height:2px;background:var(--border);margin-bottom:14px}
-        .tl-line.done{background:var(--green)}
-        .tl-text{font-size:9px;color:var(--text3)}
-        .tl-time{font-size:11px;font-weight:600;color:var(--green)}
-        .tl-time.pending{color:var(--text3);font-weight:400}
+        button {
+            background: #3483FA;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
 
-        /* TRACKING */
-        .tracking{background:var(--bg);border-radius:6px;padding:8px 10px;margin-top:8px;border-left:2px solid var(--blue)}
-        .tracking-title{font-size:10px;font-weight:600;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
-        .track-ev{display:flex;gap:6px;align-items:flex-start;padding:3px 0;font-size:11px;color:var(--text2)}
-        .track-dot{width:6px;height:6px;border-radius:50%;margin-top:4px;flex-shrink:0}
-        .track-dot.shipped{background:var(--cyan)}
-        .track-dot.near{background:var(--accent)}
-        .track-dot.absent{background:var(--red)}
-        .track-dot.retry{background:var(--orange)}
-        .track-dot.delivered{background:var(--green)}
-        .track-dot.default{background:var(--text3)}
-        .track-ev.highlight-absent{color:var(--red)}
-        .track-ev.highlight-near{color:var(--accent)}
+        button:hover {
+            transform: scale(1.05);
+        }
 
-        .rep-badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:10px;display:inline-flex;align-items:center;gap:3px;margin-top:6px}
-        .rep-badge.warn{background:rgba(248,113,113,.15);color:var(--red)}
-        .rep-badge.ok{background:rgba(52,211,153,.1);color:var(--green)}
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
-        .card-sub{display:flex;gap:6px;align-items:center;margin-top:5px;flex-wrap:wrap}
-        .card-name{font-size:12px;color:var(--text2);font-weight:500}
-        .card-comment{font-size:11px;color:var(--orange);font-style:italic;background:rgba(251,146,60,.08);padding:2px 6px;border-radius:4px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .card-items-badge{font-size:10px;font-weight:600;color:var(--accent);background:rgba(240,192,0,.1);padding:2px 6px;border-radius:4px}
-        .products-toggle{margin-top:8px;font-family:var(--font);font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text3);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
-        .products-toggle:hover{border-color:var(--text3);color:var(--text2)}
-        .products-list{max-height:0;overflow:hidden;transition:max-height .2s ease}
-        .products-list.open{max-height:300px}
-        .products-inner{padding-top:6px;font-size:11px;color:var(--text2);line-height:1.6}
-        .card-links{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-        .card-link{font-size:11px;font-weight:500;padding:5px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--border);color:var(--text2);transition:all .15s;display:inline-flex;align-items:center;gap:4px}
-        .card-link:hover{border-color:var(--blue);color:var(--blue);text-decoration:none}
+        button.btn-warning {
+            background: #FF9800;
+        }
 
-        /* LOADING / ERROR / EMPTY */
-        .loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;color:var(--text2)}
-        .spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:12px}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        .loading-text{font-size:13px}
-        .error-box{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);color:var(--red);padding:20px;border-radius:var(--radius);text-align:center;font-size:14px}
-        .empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
+        .filter-section {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
 
-        /* MAP MODAL */
-        .map-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;overflow:auto;backdrop-filter:blur(4px)}
-        .map-overlay.open{display:block}
-        .map-wrap{max-width:1100px;margin:16px auto;padding:16px;background:var(--card);border-radius:12px}
-        .map-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-        .map-head h2{font-size:16px;color:var(--accent);font-weight:600}
-        .map-close{font-family:var(--font);font-size:13px;font-weight:600;padding:6px 14px;border-radius:8px;border:1px solid var(--red);background:transparent;color:var(--red);cursor:pointer;transition:all .15s}
-        .map-close:hover{background:var(--red);color:#fff}
-        .map-filters{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
-        .mf-btn{font-family:var(--font);font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--card2);color:var(--text3);cursor:pointer;transition:all .15s}
-        .mf-btn.on-camino{border-color:var(--cyan);color:var(--cyan);background:rgba(34,211,238,.08)}
-        .mf-btn.on-reprog{border-color:var(--orange);color:var(--orange);background:rgba(251,146,60,.08)}
-        .mf-btn.on-entreg{border-color:var(--green);color:var(--green);background:rgba(52,211,153,.08)}
-        #mapFrame{width:100%;height:65vh;border-radius:8px;background:var(--bg)}
-        .leaflet-popup-content-wrapper{background:var(--card);color:var(--text);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.5)}
-        .leaflet-popup-tip{background:var(--card)}
-        .leaflet-container a.leaflet-popup-close-button{color:var(--text2)}
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
 
-        /* REPROGRAMADOS VIEW */
-        .reprog-banner{background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.2);color:var(--orange);padding:12px 16px;border-radius:var(--radius);text-align:center;font-weight:600;font-size:14px;margin-bottom:12px}
+        .filter-row label {
+            color: #FFE600;
+            font-weight: bold;
+            font-size: 14px;
+        }
 
-        .hidden{display:none!important}
+        .search-select-wrapper {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
 
-        @media(max-width:600px){
-            .detail-grid{grid-template-columns:1fr}
-            .badges{display:none}
-            .header .badges-mobile{display:flex}
-            .map-wrap{margin:8px;padding:10px}
-            #mapFrame{height:55vh}
+        .search-input-select {
+            width: 100%;
+            padding: 10px 40px 10px 15px;
+            background: #1a1a1a;
+            border: 2px solid #444;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .search-input-select:focus {
+            outline: none;
+            border-color: #FFE600;
+        }
+
+        .dropdown-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+            pointer-events: none;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #1a1a1a;
+            border: 2px solid #FFE600;
+            border-radius: 6px;
+            margin-top: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .dropdown-menu.active {
+            display: block;
+        }
+
+        .dropdown-search {
+            position: sticky;
+            top: 0;
+            background: #1a1a1a;
+            padding: 10px;
+            border-bottom: 1px solid #444;
+        }
+
+        .dropdown-search input {
+            width: 100%;
+            padding: 8px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .dropdown-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .dropdown-item:hover {
+            background: #2a2a2a;
+        }
+
+        .dropdown-item.selected {
+            background: #3483FA;
+        }
+
+        .stats-bar {
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .stat-item:hover {
+            background: #333;
+        }
+
+        .stat-item.active {
+            background: #3483FA;
+            border-color: #5ba3ff;
+        }
+
+        /* Filtro rápido por cuenta */
+        .cuenta-filter {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .cuenta-btn {
+            padding: 8px 18px;
+            border-radius: 25px;
+            font-size: 13px;
+            font-weight: bold;
+            background: #333;
+            border: 2px solid transparent;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .cuenta-btn:hover { transform: scale(1.05); }
+
+        .cuenta-btn.all.active {
+            border-color: #FFE600;
+            background: #3483FA;
+        }
+
+        .cuenta-btn.mikra-btn.active {
+            background: #9C27B0;
+            border-color: #ce93d8;
+        }
+
+        .cuenta-btn.chaya-btn.active {
+            background: #FF6B00;
+            border-color: #ffab40;
+        }
+
+        .cuenta-separator {
+            color: #555;
+            font-size: 20px;
+            user-select: none;
+        }
+
+        .cuenta-btn.canceladas-toggle {
+            background: #2a1515;
+            border: 2px solid #662222;
+            color: #f44336;
+        }
+
+        .cuenta-btn.canceladas-toggle:hover {
+            border-color: #f44336;
+        }
+
+        .cuenta-btn.canceladas-toggle.active {
+            background: #f44336;
+            border-color: #ff6659;
+            color: white;
+            box-shadow: 0 0 12px rgba(244, 67, 54, 0.4);
+        }
+
+        .cuenta-btn.canceladas-toggle span {
+            background: #f44336;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-left: 4px;
+        }
+
+        .cuenta-btn.canceladas-toggle.active span {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .cuenta-count {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-left: 4px;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #aaa;
+        }
+
+        .progress-bar-container {
+            background: #1a1a1a;
+            border-radius: 20px;
+            height: 30px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            display: flex;
+            position: relative;
+        }
+
+        .progress-segment {
+            transition: all 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .progress-segment:hover {
+            opacity: 0.8;
+        }
+
+        .progress-segment.pendiente { background: #9C27B0; }
+        .progress-segment.en-camino { background: #00d9ff; color: #000; }
+        .progress-segment.entregado { background: #00ff88; color: #000; }
+        .progress-segment.cancelado { background: #f44336; }
+        .progress-segment.reprogramado { background: #FF9800; color: #000; }
+
+        .sort-controls {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .sort-btn {
+            padding: 8px 15px;
+            font-size: 13px;
+            background: #333;
+        }
+
+        .sort-btn.active {
+            background: #FFE600;
+            color: #000;
+        }
+
+        .envio-card {
+            background: #2a2a2a;
+            border-left: 5px solid;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .envio-card:hover {
+            background: #333;
+            transform: translateX(5px);
+        }
+
+        .envio-card.pendiente { border-left-color: #9C27B0; }
+        .envio-card.en-camino { border-left-color: #00d9ff; }
+        .envio-card.entregado { border-left-color: #00ff88; }
+        .envio-card.cancelado { border-left-color: #f44336; opacity: 0.7; }
+        .envio-card.reprogramado { border-left-color: #FF9800; }
+
+        .envio-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .estado-badge {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .estado-badge.pendiente { background: #9C27B0; }
+        .estado-badge.en-camino { background: #00d9ff; color: #000; }
+        .estado-badge.entregado { background: #00ff88; color: #000; }
+        .estado-badge.cancelado { background: #f44336; }
+        .estado-badge.reprogramado { background: #FF9800; color: #000; }
+
+        .envio-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .info-item {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .info-label {
+            color: #888;
+            font-size: 11px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .zona-highlight {
+            font-size: 16px;
+            font-weight: bold;
+            color: #FFE600;
+        }
+
+        .direccion-link, .order-link {
+            color: #3483FA;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .direccion-link:hover, .order-link:hover {
+            color: #FFE600;
+        }
+
+        .timeline {
+            background: #1a1a1a;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            position: relative;
+        }
+
+        .timeline-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 25px;
+            width: 2px;
+            height: calc(100% - 8px);
+            background: #444;
+        }
+
+        .timeline-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            z-index: 1;
+        }
+
+        .timeline-dot.done {
+            background: #00ff88;
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+        }
+
+        .timeline-dot.pending {
+            background: #444;
+            border: 2px solid #666;
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-label {
+            color: #aaa;
+            font-size: 12px;
+        }
+
+        .timeline-time {
+            color: #00ff88;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .timeline-time.pending {
+            color: #666;
+        }
+
+        /* TRACKING DETALLADO */
+        .tracking-detail {
+            background: #111;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 8px;
+            border-left: 3px solid #3483FA;
+        }
+
+        .tracking-event {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 4px 0;
+            font-size: 12px;
+            color: #ccc;
+        }
+
+        .tracking-event .track-icon {
+            flex-shrink: 0;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-top: 4px;
+        }
+
+        .tracking-event .track-icon.shipped { background: #00d9ff; }
+        .tracking-event .track-icon.near { background: #FFE600; }
+        .tracking-event .track-icon.absent { background: #f44336; }
+        .tracking-event .track-icon.retry { background: #FF9800; }
+        .tracking-event .track-icon.delivered { background: #00ff88; }
+        .tracking-event .track-icon.default { background: #888; }
+
+        .tracking-event .track-time {
+            color: #888;
+            font-size: 11px;
+            min-width: 40px;
+        }
+
+        .tracking-event .track-msg {
+            flex: 1;
+        }
+
+        .tracking-event.highlight-absent {
+            color: #f44336;
+            font-weight: bold;
+        }
+
+        .tracking-event.highlight-near {
+            color: #FFE600;
+        }
+
+        .driver-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #1a3a5c;
+            color: #7ec8e3;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .reputation-warning {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #f44336;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+            animation: pulse-rep 2s infinite;
+        }
+
+        @keyframes pulse-rep {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .reputation-ok {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #1b5e20;
+            color: #a5d6a7;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #FFE600;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #333;
+            border-top-color: #FFE600;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f44336;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+            font-size: 16px;
+        }
+
+        .fecha-hoy {
+            color: #ff6b00;
+            font-weight: bold;
+        }
+
+        .items-count {
+            background: #FFE600;
+            color: #000;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .cuenta-badge {
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .cuenta-badge.mikra {
+            background: #9C27B0;
+        }
+
+        .cuenta-badge.chaya {
+            background: #FF6B00;
+        }
+
+        /* VISTA SIMPLE */
+        .envio-card-simple {
+            background: #2a2a2a;
+            border-left: 5px solid;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .envio-card-simple:hover {
+            background: #333;
+        }
+
+        .envio-card-simple.pendiente { border-left-color: #9C27B0; }
+        .envio-card-simple.en-camino { border-left-color: #00d9ff; }
+        .envio-card-simple.entregado { border-left-color: #00ff88; }
+        .envio-card-simple.cancelado { border-left-color: #f44336; opacity: 0.7; }
+        .envio-card-simple.reprogramado { border-left-color: #FF9800; }
+
+        .simple-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .simple-zona {
+            flex: 1;
+            font-size: 16px;
+            font-weight: bold;
+            color: #FFE600;
+        }
+
+        .simple-estado {
+            padding: 6px 15px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .simple-estado.pendiente { background: #9C27B0; }
+        .simple-estado.en-camino { background: #00d9ff; color: #000; }
+        .simple-estado.entregado { background: #00ff88; color: #000; }
+        .simple-estado.cancelado { background: #f44336; }
+        .simple-estado.reprogramado { background: #FF9800; color: #000; }
+
+        .simple-details {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #444;
+            display: none;
+        }
+
+        .simple-details.expanded {
+            display: block;
+        }
+
+        /* MAPA MODAL */
+        .map-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            overflow: auto;
+        }
+
+        .map-modal.active {
+            display: block;
+        }
+
+        .map-container {
+            position: relative;
+            max-width: 1200px;
+            margin: 20px auto;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .map-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .map-header h2 {
+            color: #FFE600;
+            margin: 0;
+        }
+
+        .map-close-btn {
+            background: #f44336;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .map-filters {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .map-filter-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            background: #333;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+
+        .map-filter-btn.active-pendiente {
+            background: #9C27B0;
+            border-color: #ce93d8;
+        }
+
+        .map-filter-btn.active-encamino {
+            background: #00d9ff;
+            color: #000;
+            border-color: #66eeff;
+        }
+
+        .map-filter-btn.active-reprogramado {
+            background: #FF9800;
+            color: #000;
+            border-color: #ffcc80;
+        }
+
+        .map-filter-btn.active-entregado {
+            background: #00ff88;
+            color: #000;
+            border-color: #66ffaa;
+        }
+
+        #mapFrame a {
+            transition: all 0.3s;
+        }
+
+        #mapFrame a:hover {
+            color: #FFE600 !important;
+            transform: translateX(5px);
+        }
+
+        #mapFrame {
+            width: 100%;
+            height: 70vh;
+            border-radius: 8px;
+            background: #1a1a1a;
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: #2a2a2a;
+            color: #fff;
+        }
+
+        .leaflet-popup-tip {
+            background: #2a2a2a;
+        }
+
+        .leaflet-popup-content {
+            margin: 10px;
+        }
+
+        .leaflet-container a.leaflet-popup-close-button {
+            color: #fff;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .envio-info {
+                grid-template-columns: 1fr;
+            }
+
+            .cuenta-filter {
+                gap: 6px;
+            }
+
+            .cuenta-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .map-container {
+                margin: 10px;
+                padding: 10px;
+            }
+
+            #mapFrame {
+                height: 60vh;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <!-- Header compacto: título + badges + mapa + settings en una sola zona -->
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
+            <h1 style="margin:0; font-size:18px;">🏍️ FLEX <span class="version-badge">v2.8</span></h1>
+            <div class="info-badges" id="infoBadges" style="display:none; margin:0; gap:5px;">
+                <span class="info-badge fecha" id="badgeFecha" style="padding:4px 8px; font-size:11px;">📅 HOY</span>
+                <span class="info-badge caba" id="badgeCaba" style="padding:4px 8px; font-size:11px;">🏙️ CABA: 0</span>
+                <span class="info-badge provincia" id="badgeProvincia" style="padding:4px 8px; font-size:11px;">🗺️ Prov: 0</span>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center;">
+                <button onclick="mostrarMapa()" id="btnMapa" class="hidden" style="background:#3483FA; padding:6px 14px; font-size:13px; margin:0;">🗺️ Mapa</button>
+                <button onclick="toggleTools()" id="toolsToggle" style="background:#2a2a2a; border:2px solid #444; padding:6px 12px; font-size:16px; margin:0;" title="Herramientas">⚙️</button>
+            </div>
+        </div>
 
-<!-- HEADER -->
-<div class="header">
-    <div class="header-left">
-        <span class="logo">🏍️ FLEX</span>
-        <div class="badges" id="infoBadges" style="display:none">
-            <span class="badge fecha" id="badgeFecha">HOY</span>
-            <span class="badge caba" id="badgeCaba">CABA: 0</span>
-            <span class="badge prov" id="badgeProvincia">Prov: 0</span>
+        <!-- Panel herramientas desplegable -->
+        <div class="tools-panel" id="toolsPanel">
+            <div style="background:#2a2a2a; border-radius:10px; padding:12px; margin-bottom:10px;">
+                <div style="font-size:12px; color:#888; margin-bottom:8px; text-align:center;">HERRAMIENTAS</div>
+                <div class="top-buttons" style="margin-bottom:10px;">
+                    <button onclick="toggleVista()" id="toggleVistaBtn" style="font-size:12px; padding:7px 14px;">📊 Vista Completa</button>
+                    <button onclick="cargarFlexDiaAnterior()" id="loadAyerBtn" class="btn-warning" style="font-size:12px; padding:7px 14px;">📅 Ver <span id="diaAnteriorLabel"></span></button>
+                    <div style="display:flex; gap:4px; align-items:center;">
+                        <input type="date" id="fechaCustom" style="padding:6px 8px; background:#1a1a1a; border:2px solid #444; border-radius:6px; color:#fff; font-size:12px; cursor:pointer;">
+                        <button onclick="cargarFechaCustom()" style="background:#9C27B0; font-size:12px; padding:7px 12px;">📅 Buscar</button>
+                    </div>
+                </div>
+                <div style="font-size:12px; color:#888; margin-bottom:8px; text-align:center;">FILTROS</div>
+                <div id="cuentaFilterInTools" class="cuenta-filter" style="margin-bottom:0;">
+                    <button class="cuenta-btn all active" onclick="filtrarPorCuenta('all')" style="padding:5px 12px; font-size:11px;">📦 Todas <span class="cuenta-count" id="allCount">0</span></button>
+                    <button class="cuenta-btn mikra-btn" onclick="filtrarPorCuenta('Mikra')" style="padding:5px 12px; font-size:11px;">🟣 Mikra <span class="cuenta-count" id="mikraCount">0</span></button>
+                    <button class="cuenta-btn chaya-btn" onclick="filtrarPorCuenta('Chaya')" style="padding:5px 12px; font-size:11px;">🟠 Chaya <span class="cuenta-count" id="chayaCount">0</span></button>
+                    <span class="cuenta-separator">│</span>
+                    <button class="cuenta-btn canceladas-toggle" onclick="toggleCanceladas()" id="toggleCanceladasBtn" style="padding:5px 12px; font-size:11px;">❌ Canceladas <span id="canceladasCount">0</span></button>
+                </div>
+            </div>
         </div>
-    </div>
-    <div class="header-actions">
-        <button class="icon-btn hidden" id="btnMapa" onclick="mostrarMapa()" title="Mapa">🗺️</button>
-        <button class="icon-btn" id="toolsToggle" onclick="toggleTools()" title="Herramientas">⚙️</button>
-    </div>
-</div>
 
-<!-- TOOLS DRAWER -->
-<div class="drawer" id="toolsPanel">
-    <div class="drawer-inner">
-        <button class="drawer-btn warn" onclick="cargarFlexDiaAnterior()" id="loadAyerBtn">📅 <span id="diaAnteriorLabel"></span></button>
-        <div class="drawer-sep"></div>
-        <input type="date" id="fechaCustom">
-        <button class="drawer-btn purple" onclick="cargarFechaCustom()">Buscar fecha</button>
-        <div class="drawer-sep"></div>
-        <div class="pill all active" onclick="filtrarPorCuenta('all')">Todas <span class="pill-count" id="allCount">0</span></div>
-        <div class="pill mikra" onclick="filtrarPorCuenta('Mikra')">Mikra <span class="pill-count" id="mikraCount">0</span></div>
-        <div class="pill chaya" onclick="filtrarPorCuenta('Chaya')">Chaya <span class="pill-count" id="chayaCount">0</span></div>
-        <div class="pill cancel" onclick="toggleCanceladas()" id="toggleCanceladasBtn" style="display:none">✕ Cancel <span class="pill-count" id="canceladasCount">0</span></div>
-    </div>
-</div>
+        <div id="filterSection" class="filter-section hidden" style="padding:10px; margin-bottom:10px;">
+            <div class="filter-row">
+                <label>📍 Zona:</label>
+                <div class="search-select-wrapper">
+                    <div class="search-input-select" onclick="toggleDropdown()">
+                        <span id="selectedZone">Todas las zonas</span>
+                    </div>
+                    <span class="dropdown-icon">▼</span>
+                    <div id="dropdownMenu" class="dropdown-menu">
+                        <div class="dropdown-search">
+                            <input type="text" id="dropdownSearch" placeholder="🔍 Buscar zona..." oninput="filtrarDropdown()">
+                        </div>
+                        <div id="dropdownItems"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<!-- STATS -->
-<div id="statsSection" class="hidden">
-    <div class="stats-row">
-        <div class="stat-chip active" data-s="all" onclick="filtrarPorEstado('all')" id="stat-all">
-            <div class="stat-num">0</div><div class="stat-label">Todos</div>
+        <div id="statsSection" class="stats-bar hidden" style="padding:10px; margin-bottom:10px;">
+            <div class="stats-grid" style="margin-bottom:8px;">
+                <div class="stat-item active" onclick="filtrarPorEstado('all')" id="stat-all" style="padding:6px;">
+                    <div class="stat-number" style="color:#FFE600; font-size:20px;">0</div>
+                    <div class="stat-label" style="font-size:9px;">TODOS</div>
+                </div>
+                <div class="stat-item" onclick="filtrarPorEstado('pendiente')" id="stat-pendiente" style="padding:6px;">
+                    <div class="stat-number" style="color:#9C27B0; font-size:20px;">0</div>
+                    <div class="stat-label" style="font-size:9px;">⏳ PEND</div>
+                </div>
+                <div class="stat-item" onclick="filtrarPorEstado('en-camino')" id="stat-en-camino" style="padding:6px;">
+                    <div class="stat-number" style="color:#00d9ff; font-size:20px;">0</div>
+                    <div class="stat-label" style="font-size:9px;">🚚 CAMINO</div>
+                </div>
+                <div class="stat-item" onclick="filtrarPorEstado('entregado')" id="stat-entregado" style="padding:6px;">
+                    <div class="stat-number" style="color:#00ff88; font-size:20px;">0</div>
+                    <div class="stat-label" style="font-size:9px;">✅ ENTREG</div>
+                </div>
+                <div class="stat-item" onclick="filtrarPorEstado('reprogramado')" id="stat-reprogramado" style="padding:6px;">
+                    <div class="stat-number" style="color:#FF9800; font-size:20px;">0</div>
+                    <div class="stat-label" style="font-size:9px;">🔄 REPROG</div>
+                </div>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
         </div>
-        <div class="stat-chip" data-s="pendiente" onclick="filtrarPorEstado('pendiente')" id="stat-pendiente">
-            <div class="stat-num">0</div><div class="stat-label">Pendiente</div>
-        </div>
-        <div class="stat-chip" data-s="en-camino" onclick="filtrarPorEstado('en-camino')" id="stat-en-camino">
-            <div class="stat-num">0</div><div class="stat-label">En camino</div>
-        </div>
-        <div class="stat-chip" data-s="entregado" onclick="filtrarPorEstado('entregado')" id="stat-entregado">
-            <div class="stat-num">0</div><div class="stat-label">Entregado</div>
-        </div>
-        <div class="stat-chip" data-s="reprogramado" onclick="filtrarPorEstado('reprogramado')" id="stat-reprogramado">
-            <div class="stat-num">0</div><div class="stat-label">Reprogramado</div>
-        </div>
-    </div>
-    <div class="progress" id="progressBar"></div>
-</div>
 
-<!-- FILTERS -->
-<div id="filterSection" class="hidden">
-    <div class="filter-bar">
-        <div class="zone-select-wrap" id="zoneSelectWrap">
-            <button class="zone-trigger" onclick="toggleDropdown()">
-                <span id="selectedZone">Todas las zonas</span>
-            </button>
-            <div id="dropdownMenu" class="zone-dd">
-                <input type="text" id="dropdownSearch" placeholder="Buscar zona…" oninput="filtrarDropdown()">
-                <div id="dropdownItems"></div>
+        <div id="sortSection" class="sort-controls hidden" style="margin-bottom:8px; padding:8px;">
+            <label style="color: #FFE600; font-weight: bold; font-size:12px;">📊 Ordenar:</label>
+            <button class="sort-btn active" onclick="ordenarPor('zona')" style="font-size:11px; padding:5px 10px;">🌍 Zona</button>
+            <button class="sort-btn" onclick="ordenarPor('fecha-entrega')" style="font-size:11px; padding:5px 10px;">📅 Fecha</button>
+            <button class="sort-btn" onclick="ordenarPor('hora-entrega')" style="font-size:11px; padding:5px 10px;">🕐 Hora</button>
+            <button class="sort-btn" onclick="ordenarPor('estado')" style="font-size:11px; padding:5px 10px;">📋 Estado</button>
+            <button class="sort-btn" onclick="ordenarPor('recientes')" style="font-size:11px; padding:5px 10px;">🆕 Recientes</button>
+        </div>
+
+        <div id="content"></div>
+
+        <!-- MODAL MAPA -->
+        <div id="mapModal" class="map-modal">
+            <div class="map-container">
+                <div class="map-header">
+                    <h2>🗺️ Mapa de Entregas</h2>
+                    <button class="map-close-btn" onclick="cerrarMapa()">✕ Cerrar</button>
+                </div>
+                <div class="map-filters">
+                    <button class="map-filter-btn active-encamino" onclick="toggleMapFilter('en-camino')" id="mapFilterEnCamino">
+                        🚚 En camino (<span id="mapCountEnCamino">0</span>)
+                    </button>
+                    <button class="map-filter-btn active-reprogramado" onclick="toggleMapFilter('reprogramado')" id="mapFilterReprogramado">
+                        🔄 Reprogramados (<span id="mapCountReprogramado">0</span>)
+                    </button>
+                    <button class="map-filter-btn active-entregado" onclick="toggleMapFilter('entregado')" id="mapFilterEntregado">
+                        ✅ Entregados (<span id="mapCountEntregado">0</span>)
+                    </button>
+                </div>
+                <div id="mapFrame"></div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- SORT -->
-<div id="sortSection" class="sort-row hidden">
-    <span class="sort-label">Ordenar:</span>
-    <button class="sort-btn active" onclick="ordenarPor('zona',this)">Zona</button>
-    <button class="sort-btn" onclick="ordenarPor('fecha-entrega',this)">Fecha</button>
-    <button class="sort-btn" onclick="ordenarPor('hora-entrega',this)">Hora</button>
-    <button class="sort-btn" onclick="ordenarPor('estado',this)">Estado</button>
-    <button class="sort-btn" onclick="ordenarPor('recientes',this)">Recientes</button>
-</div>
+    <script>
+        // CONFIGURACIÓN - AMBAS CUENTAS ACTIVAS
+        const CUENTAS = [
+            {
+                nombre: 'Mikra',
+                clientId: '6723747350775490',
+                proxy: 'https://mikra-flex-proxy.rafaelassir.workers.dev',
+                color: 'mikra'
+            },
+            {
+                nombre: 'Chaya',
+                clientId: '1942700449315778',
+                proxy: 'https://chaya-flex-proxy.rafaelassir.workers.dev',
+                color: 'chaya'
+            }
+        ];
 
-<!-- CONTENT -->
-<div class="content" id="content"></div>
+        let allFlexOrders = [];
+        let currentStateFilter = 'all';
+        let currentZoneFilter = 'all';
+        let currentCuentaFilter = 'all';
+        let mostrarCanceladas = false;
+        let currentSort = 'zona';
+        let dropdownOpen = false;
+        let vistaSimple = true; // ACTIVADA POR DEFECTO
 
-<!-- MAP MODAL -->
-<div id="mapModal" class="map-overlay">
-    <div class="map-wrap">
-        <div class="map-head">
-            <h2>Mapa de Entregas</h2>
-            <button class="map-close" onclick="cerrarMapa()">✕ Cerrar</button>
-        </div>
-        <div class="map-filters">
-            <button class="mf-btn on-camino" onclick="toggleMapFilter('en-camino')" id="mapFilterEnCamino">
-                🚚 En camino (<span id="mapCountEnCamino">0</span>)
-            </button>
-            <button class="mf-btn on-reprog" onclick="toggleMapFilter('reprogramado')" id="mapFilterReprogramado">
-                🔄 Reprog (<span id="mapCountReprogramado">0</span>)
-            </button>
-            <button class="mf-btn on-entreg" onclick="toggleMapFilter('entregado')" id="mapFilterEntregado">
-                ✅ Entreg (<span id="mapCountEntregado">0</span>)
-            </button>
-        </div>
-        <div id="mapFrame"></div>
-    </div>
-</div>
+        const BARRIOS_CABA = [
+            'Agronomía', 'Almagro', 'Balvanera', 'Barracas', 'Belgrano', 'Boedo',
+            'Caballito', 'Chacarita', 'Coghlan', 'Colegiales', 'Constitución',
+            'Flores', 'Floresta', 'La Boca', 'Liniers', 'Mataderos',
+            'Monte Castro', 'Monserrat', 'Nueva Pompeya', 'Núñez', 'Palermo',
+            'Parque Avellaneda', 'Parque Chacabuco', 'Parque Patricios', 'Paternal',
+            'Recoleta', 'Retiro', 'Saavedra', 'San Cristóbal', 'San Nicolás',
+            'San Telmo', 'Velez Sarsfield', 'Versailles', 'Villa Crespo',
+            'Villa Devoto', 'Villa General Mitre', 'Villa Lugano', 'Villa Luro',
+            'Villa Ortúzar', 'Villa Pueyrredon', 'Villa Pueyrredón', 'Villa Real',
+            'Villa Santa Rita', 'Villa Urquiza'
+        ];
 
-<script>
-// === CONFIG ===
-const CUENTAS = [
-    { nombre: 'Mikra', clientId: '6723747350775490', proxy: 'https://mikra-flex-proxy.rafaelassir.workers.dev', color: 'mikra' },
-    { nombre: 'Chaya', clientId: '1942700449315778', proxy: 'https://chaya-flex-proxy.rafaelassir.workers.dev', color: 'chaya' }
-];
-
-let allFlexOrders = [];
-let currentStateFilter = 'all';
-let currentZoneFilter = 'all';
-let currentCuentaFilter = 'all';
-let mostrarCanceladas = false;
-let currentSort = 'zona';
-let dropdownOpen = false;
-let vistaSimple = true;
-
-const BARRIOS_CABA = [
-    'Agronomía','Almagro','Balvanera','Barracas','Belgrano','Boedo',
-    'Caballito','Chacarita','Coghlan','Colegiales','Constitución',
-    'Flores','Floresta','La Boca','Liniers','Mataderos',
-    'Monte Castro','Monserrat','Nueva Pompeya','Núñez','Palermo',
-    'Parque Avellaneda','Parque Chacabuco','Parque Patricios','Paternal',
-    'Recoleta','Retiro','Saavedra','San Cristóbal','San Nicolás',
-    'San Telmo','Velez Sarsfield','Versailles','Villa Crespo',
-    'Villa Devoto','Villa General Mitre','Villa Lugano','Villa Luro',
-    'Villa Ortúzar','Villa Pueyrredon','Villa Pueyrredón','Villa Real',
-    'Villa Santa Rita','Villa Urquiza'
-];
-
-function normalizar(t){return t.toLowerCase().trim().replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u').replace(/ñ/g,'n')}
-function esBarrioCABA(n){const nn=normalizar(n);return BARRIOS_CABA.some(b=>normalizar(b)===nn)}
-function esCABAPorCP(z){if(!z)return false;const c=parseInt(String(z).replace(/\D/g,''),10);return!isNaN(c)&&c>=1000&&c<=1499}
-
-function getZonaDetallada(barrio,ciudad,zipCode){
-    const b=(barrio||'').trim(),c=(ciudad||'').trim();
-    const esCABAn=c==='CABA'||b==='CABA'||c==='Buenos aires'||c==='Capital Federal'||esBarrioCABA(b)||esBarrioCABA(c);
-    const esCABAcp=esCABAPorCP(zipCode);
-    if(esCABAn||esCABAcp){
-        if(b&&b!=='CABA'&&b!=='Buenos aires'&&b!=='Capital Federal')return`CABA - ${b}`;
-        if(c&&c!=='CABA'&&c!=='Buenos aires'&&c!=='Capital Federal'&&esBarrioCABA(c))return`CABA - ${c}`;
-        return'CABA - Otros';
-    }
-    const zN=['San Isidro','Vicente López','San Fernando','Tigre','Olivos','Martínez','Acassuso','Beccar','La Lucila','Villa Adelina'];
-    if(zN.some(z=>normalizar(z)===normalizar(c)||normalizar(z)===normalizar(b)))return`GBA Norte - ${c||b}`;
-    const zO=['La Reja','Morón','Hurlingham','Ituzaingó','Ramos Mejía','Ciudadela','Santos Lugares','Villa Luzuriaga','Luzuriaga','Ingeniero Allan','Castelar','El Palomar','Ciudad Jardin Del Palomar','Caseros','San Justo','san justo','Villa Sarmiento','villa sarmiento'];
-    if(zO.some(z=>normalizar(z)===normalizar(c)||normalizar(z)===normalizar(b)))return`GBA Oeste - ${c||b}`;
-    const zS=['Lomas de Zamora','Banfield','Lanús','Avellaneda','Quilmes','Sarandi','Sarandí','Tristán Suárez','Carlos Spegazzini','Bernal Oeste','Temperley','Remedios De Escalada','Valentin Alsina','Berazategui','Florencio Varela','Wilde'];
-    if(zS.some(z=>normalizar(z)===normalizar(c)||normalizar(z)===normalizar(b)))return`GBA Sur - ${c||b}`;
-    const zI=['Zárate','Campana','La Plata','Mar del Plata','Bahía Blanca'];
-    if(zI.some(z=>normalizar(z)===normalizar(c)||normalizar(z)===normalizar(b)))return`Buenos Aires - ${c||b}`;
-    return c||b||'Otras zonas';
-}
-function esCABA(z){return z.startsWith('CABA')}
-
-// === UI CONTROLS ===
-function toggleDropdown(){
-    dropdownOpen=!dropdownOpen;
-    const m=document.getElementById('dropdownMenu');
-    if(dropdownOpen){m.classList.add('open');document.getElementById('dropdownSearch').focus()}
-    else m.classList.remove('open');
-}
-function filtrarDropdown(){
-    const s=normalizar(document.getElementById('dropdownSearch').value);
-    document.querySelectorAll('.zone-dd-item').forEach(i=>{i.style.display=normalizar(i.textContent).includes(s)?'block':'none'});
-}
-function selectZone(z){
-    currentZoneFilter=z;
-    document.getElementById('selectedZone').textContent=z==='all'?'Todas las zonas':z.split('(')[0].trim();
-    toggleDropdown();aplicarFiltros();
-}
-function toggleTools(){
-    document.getElementById('toolsPanel').classList.toggle('open');
-    document.getElementById('toolsToggle').classList.toggle('active');
-}
-function toggleVista(){
-    vistaSimple=!vistaSimple;
-    document.getElementById('toggleVistaBtn').textContent=vistaSimple?'Vista Completa':'Vista Simple';
-    aplicarFiltros();
-}
-function toggleSimpleDetails(i){
-    const d=document.getElementById(`det-${i}`);
-    if(d)d.classList.toggle('open');
-}
-function toggleProducts(i){
-    const d=document.getElementById(`prod-${i}`);
-    if(d)d.classList.toggle('open');
-}
-
-// === DATE HELPERS ===
-function getDiaAnteriorLaborable(){
-    const h=new Date();const d=h.getDay();
-    let a=1;if(d===0)a=2;else if(d===1)a=3;else if(d===6)a=1;
-    const r=new Date();r.setDate(r.getDate()-a);r.setHours(0,0,0,0);return r;
-}
-function actualizarLabelDiaAnterior(){
-    const d=getDiaAnteriorLaborable();
-    const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-    document.getElementById('diaAnteriorLabel').textContent=dias[d.getDay()];
-}
-function formatearFecha(f){
-    if(!f)return'—';const fecha=new Date(f),hoy=new Date();
-    hoy.setHours(0,0,0,0);fecha.setHours(0,0,0,0);
-    const diff=Math.floor((fecha-hoy)/(864e5));
-    if(diff===0)return'Hoy';if(diff===-1)return'Ayer';if(diff===1)return'Mañana';
-    const d=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    return`${d[fecha.getDay()]} ${fecha.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'})}`;
-}
-function formatearSoloHora(f,fe){
-    if(!f)return null;const fecha=new Date(f);
-    if(fe){const e=new Date(fe);e.setHours(0,0,0,0);const a=new Date(f);a.setHours(0,0,0,0);
-        if(e.getTime()!==a.getTime()){const d=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-            return`${fecha.toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires',hour:'2-digit',minute:'2-digit',hour12:false})} (${d[fecha.getDay()]})`;
+        function normalizar(texto) {
+            return texto.toLowerCase().trim()
+                .replace(/á/g, 'a').replace(/é/g, 'e')
+                .replace(/í/g, 'i').replace(/ó/g, 'o')
+                .replace(/ú/g, 'u').replace(/ñ/g, 'n');
         }
-    }
-    return fecha.toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires',hour:'2-digit',minute:'2-digit',hour12:false});
-}
-function esEntregaParaFecha(s,t){
-    const f=s.shipping_option?.estimated_delivery_time?.date||s.shipping_option?.estimated_delivery_final?.date;
-    if(!f)return false;const e=new Date(f);e.setHours(0,0,0,0);return e.getTime()===t.getTime();
-}
 
-// === API ===
-async function obtenerTokenCuenta(c){
-    try{const r=await fetch(`${c.proxy}/get-token`);const d=await r.json();
-        if(d.access_token){if(d.user_id&&!sessionStorage.getItem(`${c.nombre.toLowerCase()}_user_id`))sessionStorage.setItem(`${c.nombre.toLowerCase()}_user_id`,d.user_id);return d.access_token}
-        return null;
-    }catch(e){console.error(`Token error ${c.nombre}:`,e);return null}
-}
+        function esBarrioCABA(nombre) {
+            const nombreNorm = normalizar(nombre);
+            return BARRIOS_CABA.some(barrio => normalizar(barrio) === nombreNorm);
+        }
 
-// === STATE DETECTION ===
-function getOrderState(s){
-    const st=(s.status||'').toLowerCase(),sub=(s.substatus||'').toLowerCase(),h=s.status_history||{},tags=(s.tags||[]).map(t=>(t||'').toLowerCase());
-    if(sub==='rescheduled'||sub==='rescheduled_by_buyer'||sub==='buyer_rescheduled'||sub==='delayed'||sub==='returning_to_sender'||sub==='waiting_for_withdrawal'||sub==='receiver_absent'||sub==='out_of_delivery_area'||sub==='not_delivered_and_returning'||sub==='delivery_failed'||tags.includes('rescheduled')||tags.includes('delayed')||tags.includes('return_to_sender'))return'reprogramado';
-    if(st==='not_delivered'&&!sub.includes('cancel'))return'reprogramado';
-    if(st==='cancelled'||sub==='cancelled'||sub==='buyer_cancelled'||sub==='cancelled_by_buyer'||sub==='cancelled_manually'||tags.includes('cancelled')||(st==='not_delivered'&&sub.includes('cancel')))return'cancelado';
-    if(h.date_delivered)return'entregado';
-    if(h.date_shipped)return'en-camino';
-    return'pendiente';
-}
-function getReprogramadoDetail(s){
-    const sub=(s.substatus||'').toLowerCase();
-    if(sub==='receiver_absent')return{label:'Ausente',short:'Ausente'};
-    if(sub==='buyer_rescheduled'||sub==='rescheduled_by_buyer'||sub==='rescheduled')return{label:'Reprog. comprador',short:'Reprogram.'};
-    if(sub==='delayed')return{label:'Demorado',short:'Demorado'};
-    if(sub==='returning_to_sender'||sub==='not_delivered_and_returning')return{label:'Devolviendo',short:'Devolviendo'};
-    if(sub==='out_of_delivery_area')return{label:'Fuera de zona',short:'Fuera zona'};
-    if(sub==='delivery_failed')return{label:'Entrega fallida',short:'Fallida'};
-    if(sub==='waiting_for_withdrawal')return{label:'Esperando retiro',short:'Esp. retiro'};
-    return{label:'Reprogramado',short:'Reprogramado'};
-}
+        function esCABAPorCP(zipCode) {
+            if (!zipCode) return false;
+            const cp = parseInt(String(zipCode).replace(/\D/g, ''), 10);
+            return !isNaN(cp) && cp >= 1000 && cp <= 1499;
+        }
 
-// === TRACKING ===
-function classifyTrackingEvent(e){
-    const l=(e.label||'').toLowerCase(),s=(e.substatus||'').toLowerCase();
-    if(s==='receiver_absent'||l.includes('ausente'))return{icon:'absent',css:'highlight-absent'};
-    if(s==='nearby'||s==='almost_there'||l.includes('muy cerca'))return{icon:'near',css:'highlight-near'};
-    if(s==='rescheduled'||l.includes('nuevamente')||l.includes('reintento'))return{icon:'retry',css:''};
-    if(s==='delivered'||l.includes('entregamos'))return{icon:'delivered',css:''};
-    if(s==='in_transit'||s==='out_for_delivery'||s==='shipped'||l.includes('en camino'))return{icon:'shipped',css:''};
-    if(s==='returning_to_sender'||s==='not_delivered_and_returning'||l.includes('devolv'))return{icon:'absent',css:'highlight-absent'};
-    if(s==='delivery_failed'||l.includes('fallid'))return{icon:'absent',css:'highlight-absent'};
-    return{icon:'default',css:''};
-}
-function renderTracking(s){
-    const ev=s._trackingEvents;if(!ev||!ev.length)return'';
-    let h='<div class="tracking"><div class="tracking-title">Historial</div>';
-    ev.forEach(e=>{const c=classifyTrackingEvent(e);h+=`<div class="track-ev ${c.css}"><div class="track-dot ${c.icon}"></div><div>${e.label}</div></div>`});
-    return h+'</div>';
-}
-function renderRepBadge(s){
-    const p=s._problems;if(!p||!p.length)return'';
-    return p.map(x=>x.reputationAffected?`<span class="rep-badge warn">⚠ Rep. afectada (${x.type})</span>`:`<span class="rep-badge ok">✓ Rep. ok (${x.type})</span>`).join('');
-}
-function formatDateShort(d){if(!d)return'';const f=new Date(d);return f.toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:false})}
-function enrichShippingData(c,t,s,oid){
-    const subH=s.substatus_history||[],h=s.status_history||{};let events=[];
-    const labels={shipment_paid:'Preparando envío',ready_to_ship:'Listo para enviar',picked_up:'Retirado',in_hub:'En centro distribución',in_transit:'En camino',out_for_delivery:'En camino',nearby:'Muy cerca',almost_there:'Muy cerca',receiver_absent:'Comprador ausente',waiting_for_withdrawal:'Esperando retiro',delivered:'Entregado',returning_to_sender:'Devolviendo al vendedor',not_delivered_and_returning:'No entregado, devolviendo',rescheduled:'En camino nuevamente',rescheduled_by_buyer:'Reprogramado por comprador',buyer_rescheduled:'Reprogramado por comprador',delayed:'Demorado',out_of_delivery_area:'Fuera de zona',delivery_failed:'Entrega fallida',claimed_me:'Reclamo abierto',stolen:'Paquete robado',lost:'Extraviado',damaged:'Dañado',cancelled:'Cancelado',buyer_cancelled:'Cancelado por comprador',cancelled_by_buyer:'Cancelado por comprador'};
-    if(subH.length>0)subH.forEach(e=>{const d=e.date?formatDateShort(e.date):'',l=labels[e.substatus]||e.substatus||e.status||'';if(l)events.push({label:`${d} | ${l}`,substatus:e.substatus})});
-    if(h.date_shipped&&!events.some(e=>e.substatus==='in_transit'||e.substatus==='out_for_delivery'))events.push({label:`${formatDateShort(h.date_shipped)} | En camino`,substatus:'shipped'});
-    if(h.date_delivered&&!events.some(e=>e.substatus==='delivered'))events.push({label:`${formatDateShort(h.date_delivered)} | Entregado`,substatus:'delivered'});
-    if(h.date_not_delivered)events.push({label:`${formatDateShort(h.date_not_delivered)} | No entregado`,substatus:'not_delivered'});
-    const seen=new Set();events=events.filter(e=>{if(seen.has(e.label))return false;seen.add(e.label);return true});
-    if(events.length>0)s._trackingEvents=events;
-    const probSubs=['delayed','delivery_failed','receiver_absent','lost','stolen','damaged'];
-    const probs=[];
-    if(s.status==='not_delivered'||probSubs.includes(s.substatus))probs.push({type:s.substatus||s.status,reputationAffected:false});
-    if(probs.length>0)s._problems=probs;
-}
+        function getZonaDetallada(barrio, ciudad, zipCode) {
+            const barrioNorm = (barrio || '').trim();
+            const ciudadNorm = (ciudad || '').trim();
+            
+            // Detectar CABA por nombre O por código postal (1000-1499)
+            const esCABAporNombre = ciudadNorm === 'CABA' || barrioNorm === 'CABA' || ciudadNorm === 'Buenos aires'
+                || ciudadNorm === 'Capital Federal' || esBarrioCABA(barrioNorm) || esBarrioCABA(ciudadNorm);
+            const esCABAporCP = esCABAPorCP(zipCode);
+            
+            if (esCABAporNombre || esCABAporCP) {
+                if (barrioNorm && barrioNorm !== 'CABA' && barrioNorm !== 'Buenos aires' && barrioNorm !== 'Capital Federal') {
+                    return `CABA - ${barrioNorm}`;
+                }
+                if (ciudadNorm && ciudadNorm !== 'CABA' && ciudadNorm !== 'Buenos aires' && ciudadNorm !== 'Capital Federal' && esBarrioCABA(ciudadNorm)) {
+                    return `CABA - ${ciudadNorm}`;
+                }
+                return 'CABA - Otros';
+            }
+            
+            const zonaNorte = ['San Isidro', 'Vicente López', 'San Fernando', 'Tigre', 'Olivos', 'Martínez', 'Acassuso', 'Beccar', 'La Lucila', 'Villa Adelina'];
+            if (zonaNorte.some(z => normalizar(z) === normalizar(ciudadNorm) || normalizar(z) === normalizar(barrioNorm))) {
+                return `GBA Norte - ${ciudadNorm || barrioNorm}`;
+            }
+            
+            const zonaOeste = ['La Reja', 'Morón', 'Hurlingham', 'Ituzaingó', 'Ramos Mejía', 'Ciudadela', 'Santos Lugares', 'Villa Luzuriaga', 'Luzuriaga', 'Ingeniero Allan', 'Castelar', 'El Palomar', 'Ciudad Jardin Del Palomar', 'Caseros', 'San Justo', 'San justo', 'Villa Sarmiento', 'villa sarmiento'];
+            if (zonaOeste.some(z => normalizar(z) === normalizar(ciudadNorm) || normalizar(z) === normalizar(barrioNorm))) {
+                return `GBA Oeste - ${ciudadNorm || barrioNorm}`;
+            }
+            
+            const zonaSur = ['Lomas de Zamora', 'Banfield', 'Lanús', 'Avellaneda', 'Quilmes', 'Sarandi', 'Sarandí', 'Tristán Suárez', 'Carlos Spegazzini', 'Bernal Oeste', 'Temperley', 'Remedios De Escalada', 'Valentin Alsina', 'Berazategui', 'Florencio Varela', 'Wilde'];
+            if (zonaSur.some(z => normalizar(z) === normalizar(ciudadNorm) || normalizar(z) === normalizar(barrioNorm))) {
+                return `GBA Sur - ${ciudadNorm || barrioNorm}`;
+            }
+            
+            const interior = ['Zárate', 'Campana', 'La Plata', 'Mar del Plata', 'Bahía Blanca'];
+            if (interior.some(z => normalizar(z) === normalizar(ciudadNorm) || normalizar(z) === normalizar(barrioNorm))) {
+                return `Buenos Aires - ${ciudadNorm || barrioNorm}`;
+            }
+            
+            return ciudadNorm || barrioNorm || 'Otras zonas';
+        }
 
-// === LOAD DATA ===
-async function cargarFlexHoy(){
-    currentStateFilter='all';currentZoneFilter='all';currentCuentaFilter='all';mostrarCanceladas=false;allFlexOrders=[];
-    const h=new Date();const d=h.getDay();let f=new Date(),l='HOY';
-    if(d===0){f.setDate(f.getDate()+1);l='LUNES'}else if(d===6){f.setDate(f.getDate()+2);l='LUNES'}
-    f.setHours(0,0,0,0);await cargarFlexPorFecha(f,l);
-}
-async function cargarFlexDiaAnterior(){
-    currentStateFilter='all';currentZoneFilter='all';currentCuentaFilter='all';mostrarCanceladas=false;allFlexOrders=[];
-    const d=getDiaAnteriorLaborable();const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-    await cargarFlexPorFecha(d,dias[d.getDay()].toUpperCase());
-}
-async function cargarFechaCustom(){
-    const i=document.getElementById('fechaCustom');if(!i.value){alert('Seleccioná una fecha');return}
-    currentStateFilter='all';currentZoneFilter='all';currentCuentaFilter='all';mostrarCanceladas=false;allFlexOrders=[];
-    const p=i.value.split('-'),f=new Date(p[0],p[1]-1,p[2]);f.setHours(0,0,0,0);
-    const dias=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'],meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    await cargarFlexPorFecha(f,`${dias[f.getDay()]} ${f.getDate()} ${meses[f.getMonth()]}`);
-}
+        function esCABA(zona) {
+            return zona.startsWith('CABA');
+        }
 
-async function cargarFlexPorFecha(targetDate,label){
-    const content=document.getElementById('content');
-    content.innerHTML=`<div class="loading-wrap"><div class="spinner"></div><div class="loading-text">Cargando ${label}…</div></div>`;
-    let all=[];const seen=new Set();
-    for(const cuenta of CUENTAS){
-        try{const token=await obtenerTokenCuenta(cuenta);if(!token)continue;
-            const orders=await cargarOrdenesDeCuenta(cuenta,token,targetDate);
-            orders.forEach(item=>{const sid=item.shipping.id;if(!seen.has(sid)){seen.add(sid);all.push({...item,cuentaNombre:cuenta.nombre,cuentaColor:cuenta.color})}});
-        }catch(e){console.error(`Error ${cuenta.nombre}:`,e)}
-    }
-    if(!all.length){content.innerHTML=`<div class="error-box">No hay envíos FLEX para ${label}</div>`;return}
-    allFlexOrders=all.filter(({shipping})=>{const st=getOrderState(shipping);if(st==='cancelado')return esEntregaParaFecha(shipping,targetDate);return true});
-    const zonaCounts=new Map();let cabaC=0,provC=0;
-    allFlexOrders.forEach(({shipping})=>{const st=getOrderState(shipping);if(st==='cancelado')return;
-        const z=getZonaDetallada(shipping.receiver_address?.neighborhood?.name||'',shipping.receiver_address?.city?.name||'',shipping.receiver_address?.zip_code||'');
-        zonaCounts.set(z,(zonaCounts.get(z)||0)+1);esCABA(z)?cabaC++:provC++;
-    });
-    document.getElementById('badgeFecha').textContent=label;
-    document.getElementById('badgeCaba').textContent=`CABA: ${cabaC}`;
-    document.getElementById('badgeProvincia').textContent=`Prov: ${provC}`;
-    document.getElementById('infoBadges').style.display='flex';
-    const dd=document.getElementById('dropdownItems');
-    const totalSC=allFlexOrders.filter(({shipping})=>getOrderState(shipping)!=='cancelado').length;
-    dd.innerHTML=`<div class="zone-dd-item" onclick="selectZone('all')">Todas las zonas (${totalSC})</div>`;
-    let cabaT=0;Array.from(zonaCounts.entries()).forEach(([z,c])=>{if(esCABA(z))cabaT+=c});
-    if(cabaT>0)dd.innerHTML+=`<div class="zone-dd-item" onclick="selectZone('CABA')">CABA - Todos (${cabaT})</div>`;
-    Array.from(zonaCounts.entries()).sort().forEach(([z,c])=>{dd.innerHTML+=`<div class="zone-dd-item" onclick="selectZone('${z}')">${z} (${c})</div>`});
-    document.getElementById('filterSection').classList.remove('hidden');
-    document.getElementById('statsSection').classList.remove('hidden');
-    document.getElementById('sortSection').classList.remove('hidden');
-    document.getElementById('btnMapa').classList.remove('hidden');
-    displayOrders('all');
-}
+        function toggleDropdown() {
+            dropdownOpen = !dropdownOpen;
+            const menu = document.getElementById('dropdownMenu');
+            if (dropdownOpen) {
+                menu.classList.add('active');
+                document.getElementById('dropdownSearch').focus();
+            } else {
+                menu.classList.remove('active');
+            }
+        }
 
-async function cargarOrdenesDeCuenta(cuenta,token,targetDate){
-    let temp=[];const cKey=cuenta.nombre.toLowerCase();
-    let sellerId=sessionStorage.getItem(`${cKey}_user_id`);
-    if(!sellerId){try{const r=await fetch(`${cuenta.proxy}/get-token`);const d=await r.json();if(d.user_id){sellerId=d.user_id;sessionStorage.setItem(`${cKey}_user_id`,sellerId)}}catch(e){}}
-    if(!sellerId)return[];
-    const df=new Date(targetDate);df.setDate(df.getDate()-3);
-    const dt=new Date(targetDate);dt.setDate(dt.getDate()+1);dt.setHours(23,59,59,0);
-    const dfs=df.toISOString().split('.')[0]+'.000-00:00',dts=dt.toISOString().split('.')[0]+'.000-00:00';
-    const dateFilter=`&order.date_created.from=${encodeURIComponent(dfs)}&order.date_created.to=${encodeURIComponent(dts)}`;
-    const proms=[];for(let p=0;p<20;p++)proms.push(fetch(`${cuenta.proxy}/api/orders/search?seller=${sellerId}&offset=${p*50}&limit=50&sort=date_desc${dateFilter}`,{headers:{'Authorization':`Bearer ${token}`}}).then(r=>r.json()));
-    const pages=await Promise.all(proms);const allO=pages.flatMap(d=>d.results||[]);
-    const shipProms=allO.map(async o=>{try{const sid=o.shipping?.id;if(!sid)return null;
-        const r=await fetch(`${cuenta.proxy}/api/shipments/${sid}`,{headers:{'Authorization':`Bearer ${token}`}});const s=await r.json();
-        if(s.logistic_type==='self_service'){if(esEntregaParaFecha(s,targetDate)||s.status==='cancelled'||s.status==='not_delivered')return{order:o,shipping:s}}return null}catch(e){return null}});
-    const res=await Promise.all(shipProms);temp=res.filter(Boolean);
-    temp.forEach(({order,shipping})=>enrichShippingData(null,null,shipping,order.id));
-    const uniq=new Map();temp.forEach(({order,shipping})=>{const sid=shipping.id;if(!uniq.has(sid))uniq.set(sid,{orders:[order],shipping});else uniq.get(sid).orders.push(order)});
-    return Array.from(uniq.values());
-}
+        function filtrarDropdown() {
+            const search = normalizar(document.getElementById('dropdownSearch').value);
+            const items = document.querySelectorAll('.dropdown-item');
+            items.forEach(item => {
+                const text = normalizar(item.textContent);
+                item.style.display = text.includes(search) ? 'block' : 'none';
+            });
+        }
 
-// === FILTERS ===
-function filtrarPorCuenta(c){
-    currentCuentaFilter=c;
-    document.querySelectorAll('.pill.all,.pill.mikra,.pill.chaya').forEach(e=>e.classList.remove('active'));
-    document.querySelector(`.pill.${c==='all'?'all':c.toLowerCase()}`).classList.add('active');
-    if(mostrarCanceladas){mostrarCanceladas=false;document.getElementById('toggleCanceladasBtn').classList.remove('active');currentStateFilter='all';
-        document.querySelectorAll('.stat-chip').forEach(e=>e.classList.remove('active'));document.getElementById('stat-all').classList.add('active')}
-    aplicarFiltros();
-}
-function toggleCanceladas(){
-    mostrarCanceladas=!mostrarCanceladas;const b=document.getElementById('toggleCanceladasBtn');
-    if(mostrarCanceladas){b.classList.add('active');currentStateFilter='cancelado';document.querySelectorAll('.stat-chip').forEach(e=>e.classList.remove('active'))}
-    else{b.classList.remove('active');currentStateFilter='all';document.querySelectorAll('.stat-chip').forEach(e=>e.classList.remove('active'));document.getElementById('stat-all').classList.add('active')}
-    aplicarFiltros();
-}
-function filtrarPorEstado(e){
-    if(e!=='cancelado'){mostrarCanceladas=false;document.getElementById('toggleCanceladasBtn').classList.remove('active')}
-    currentStateFilter=e;document.querySelectorAll('.stat-chip').forEach(el=>el.classList.remove('active'));
-    if(document.getElementById(`stat-${e}`))document.getElementById(`stat-${e}`).classList.add('active');
-    aplicarFiltros();
-}
-function ordenarPor(t,btn){
-    currentSort=t;document.querySelectorAll('.sort-btn').forEach(e=>e.classList.remove('active'));if(btn)btn.classList.add('active');aplicarFiltros();
-}
-function aplicarFiltros(){
-    let f=allFlexOrders;
-    if(currentCuentaFilter!=='all')f=f.filter(({cuentaNombre})=>cuentaNombre===currentCuentaFilter);
-    if(currentStateFilter==='cancelado')f=f.filter(({shipping})=>getOrderState(shipping)==='cancelado');
-    else if(currentStateFilter==='all')f=f.filter(({shipping})=>getOrderState(shipping)!=='cancelado');
-    else f=f.filter(({shipping})=>getOrderState(shipping)===currentStateFilter);
-    if(currentZoneFilter!=='all')f=f.filter(({shipping})=>{
-        const z=getZonaDetallada(shipping.receiver_address?.neighborhood?.name||'',shipping.receiver_address?.city?.name||'',shipping.receiver_address?.zip_code||'');
-        return currentZoneFilter==='CABA'?esCABA(z):z===currentZoneFilter;
-    });
-    if(currentSort==='zona')f.sort((a,b)=>{const zA=getZonaDetallada(a.shipping.receiver_address?.neighborhood?.name||'',a.shipping.receiver_address?.city?.name||'',a.shipping.receiver_address?.zip_code||'');const zB=getZonaDetallada(b.shipping.receiver_address?.neighborhood?.name||'',b.shipping.receiver_address?.city?.name||'',b.shipping.receiver_address?.zip_code||'');return zA.localeCompare(zB)});
-    else if(currentSort==='fecha-entrega')f.sort((a,b)=>(a.shipping.shipping_option?.estimated_delivery_time?.date||'').localeCompare(b.shipping.shipping_option?.estimated_delivery_time?.date||''));
-    else if(currentSort==='hora-entrega')f.sort((a,b)=>{const tA=new Date(a.shipping.status_history?.date_delivered||a.shipping.status_history?.date_shipped||a.shipping.date_created||0).getTime();const tB=new Date(b.shipping.status_history?.date_delivered||b.shipping.status_history?.date_shipped||b.shipping.date_created||0).getTime();return tB-tA});
-    else if(currentSort==='estado'){const o={cancelado:0,reprogramado:1,pendiente:2,'en-camino':3,entregado:4};f.sort((a,b)=>o[getOrderState(a.shipping)]-o[getOrderState(b.shipping)])}
-    else if(currentSort==='recientes')f.sort((a,b)=>(b.shipping.date_created||'').localeCompare(a.shipping.date_created||''));
-    displayOrders(currentStateFilter,f);
-}
+        function selectZone(zona) {
+            currentZoneFilter = zona;
+            const displayText = zona === 'all' ? 'Todas las zonas' : zona.split('(')[0].trim();
+            document.getElementById('selectedZone').textContent = displayText;
+            toggleDropdown();
+            aplicarFiltros();
+        }
 
-// === RENDER ===
-function displayOrders(ft,custom=null){
-    const orders=custom||allFlexOrders;
-    let statsBase=allFlexOrders;
-    if(currentCuentaFilter!=='all')statsBase=statsBase.filter(({cuentaNombre})=>cuentaNombre===currentCuentaFilter);
-    const stats={pendiente:0,'en-camino':0,entregado:0,cancelado:0,reprogramado:0};
-    statsBase.forEach(({shipping})=>stats[getOrderState(shipping)]++);
-    stats.total=stats.pendiente+stats['en-camino']+stats.entregado+stats.reprogramado;
+        // PUNTO 1: Calcular día anterior laborable (viernes si es domingo/lunes)
+        function getDiaHabilActual() {
+            const hoy = new Date();
+            const diaSemana = hoy.getDay(); // 0=Dom, 6=Sáb
+            
+            // Si es sábado (6), cargar lunes (+2 días)
+            if (diaSemana === 6) {
+                hoy.setDate(hoy.getDate() + 2);
+            }
+            // Si es domingo (0), cargar lunes (+1 día)
+            else if (diaSemana === 0) {
+                hoy.setDate(hoy.getDate() + 1);
+            }
+            
+            hoy.setHours(0, 0, 0, 0);
+            return hoy;
+        }
 
-    const mikraC=allFlexOrders.filter(({cuentaNombre,shipping})=>cuentaNombre==='Mikra'&&getOrderState(shipping)!=='cancelado').length;
-    const chayaC=allFlexOrders.filter(({cuentaNombre,shipping})=>cuentaNombre==='Chaya'&&getOrderState(shipping)!=='cancelado').length;
-    const totalC=allFlexOrders.filter(({shipping})=>getOrderState(shipping)!=='cancelado').length;
-    document.getElementById('allCount').textContent=totalC;
-    document.getElementById('mikraCount').textContent=mikraC;
-    document.getElementById('chayaCount').textContent=chayaC;
+        function getDiaAnteriorLaborable() {
+            const hoy = new Date();
+            const diaSemana = hoy.getDay(); // 0=Dom, 1=Lun, ..., 6=Sáb
+            
+            let diasAtras = 1; // Por defecto ayer
+            
+            // Si hoy es domingo (0), retroceder al viernes (2 días)
+            if (diaSemana === 0) {
+                diasAtras = 2;
+            }
+            // Si hoy es lunes (1), retroceder al viernes (3 días)
+            else if (diaSemana === 1) {
+                diasAtras = 3;
+            }
+            // Si hoy es sábado (6), retroceder al viernes (1 día)
+            else if (diaSemana === 6) {
+                diasAtras = 1;
+            }
+            
+            const diaAnterior = new Date();
+            diaAnterior.setDate(diaAnterior.getDate() - diasAtras);
+            diaAnterior.setHours(0, 0, 0, 0);
+            
+            return diaAnterior;
+        }
 
-    document.querySelector('#stat-all .stat-num').textContent=stats.total;
-    document.querySelector('#stat-pendiente .stat-num').textContent=stats.pendiente;
-    document.querySelector('#stat-en-camino .stat-num').textContent=stats['en-camino'];
-    document.querySelector('#stat-entregado .stat-num').textContent=stats.entregado;
-    document.querySelector('#stat-reprogramado .stat-num').textContent=stats.reprogramado;
-    document.getElementById('canceladasCount').textContent=stats.cancelado;
-    document.getElementById('toggleCanceladasBtn').style.display=stats.cancelado>0?'inline-flex':'none';
+        function actualizarLabelDiaAnterior() {
+            const diaAnterior = getDiaAnteriorLaborable();
+            const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            const nombreDia = dias[diaAnterior.getDay()];
+            document.getElementById('diaAnteriorLabel').textContent = nombreDia;
+        }
 
-    const tot=stats.total||1;
-    document.getElementById('progressBar').innerHTML=
-        (stats.pendiente?`<div class="prog-seg pendiente" style="width:${stats.pendiente/tot*100}%"></div>`:'')+
-        (stats['en-camino']?`<div class="prog-seg en-camino" style="width:${stats['en-camino']/tot*100}%"></div>`:'')+
-        (stats.entregado?`<div class="prog-seg entregado" style="width:${stats.entregado/tot*100}%"></div>`:'')+
-        (stats.reprogramado?`<div class="prog-seg reprogramado" style="width:${stats.reprogramado/tot*100}%"></div>`:'');
+        async function obtenerTokenCuenta(cuenta) {
+            try {
+                const response = await fetch(`${cuenta.proxy}/get-token`);
+                const data = await response.json();
 
-    let html='';
-    if(!orders.length){html='<div class="empty-state">Sin envíos con estos filtros</div>'}
-    else{
-        const estadoLabel={pendiente:'Pendiente','en-camino':'En camino',entregado:'Entregado',cancelado:'Cancelada',reprogramado:'Reprogramado'};
-        orders.forEach(({orders:oList,shipping,cuentaNombre,cuentaColor},idx)=>{
-            const state=getOrderState(shipping);
-            const addr=shipping.receiver_address||{};
-            const barrio=addr.neighborhood?.name||'';
-            const ciudad=addr.city?.name||'';
-            const zipCode=addr.zip_code||'';
-            const zona=getZonaDetallada(barrio,ciudad,zipCode);
-            const calle=addr.street_name||'';
-            const num=addr.street_number||'';
-            const prov=addr.state?.name||'';
-            const dir=`${calle} ${num}, ${ciudad}, ${prov}`;
-            const gmap=`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dir)}`;
-            const fe=shipping.shipping_option?.estimated_delivery_time?.date||shipping.shipping_option?.estimated_delivery_final?.date;
-            const fechaF=formatearFecha(fe);const esHoy=fechaF==='Hoy';
-            const hist=shipping.status_history||{};const fc=shipping.date_created;
-            const estadoTexto=state==='reprogramado'?getReprogramadoDetail(shipping).label:estadoLabel[state];
-            const comp=oList[0]?.buyer?.nickname||'N/A';
-            const oid=oList[0]?.id||'';const oUrl=`https://www.mercadolibre.com.ar/ventas/${oid}/detalle`;
+                if (data.access_token) {
+                    if (data.user_id && !sessionStorage.getItem(`${cuenta.nombre.toLowerCase()}_user_id`)) {
+                        sessionStorage.setItem(`${cuenta.nombre.toLowerCase()}_user_id`, data.user_id);
+                    }
+                    return data.access_token;
+                }
 
-            const receiverName=addr.receiver_name||'';
-            const comment=(addr.comment||'').trim();
-            const itemsShip=shipping.shipping_items?.length||oList.length;
-            const productos=shipping.shipping_items||[];
+                if (data.error === 'no_token') {
+                    console.error(`Token no configurado para ${cuenta.nombre}`);
+                }
 
-            html+=`<div class="card ${state}" onclick="toggleSimpleDetails(${idx})">
-                <div class="card-cuenta ${cuentaColor}" title="${cuentaNombre}"></div>
-                <div class="card-top">
-                    <div class="card-zona">${zona}</div>
-                    <div class="card-estado ${state}">${estadoTexto}</div>
-                </div>
-                <div class="card-details" id="det-${idx}">
-                    <div class="card-detail-inner">
-                        <div class="card-sub">
-                            ${receiverName?`<span class="card-name">${receiverName}</span>`:''}
-                            ${itemsShip>1?`<span class="card-items-badge">${itemsShip} items</span>`:''}
+                return null;
+            } catch (error) {
+                console.error(`Error obteniendo token de ${cuenta.nombre}:`, error);
+                return null;
+            }
+        }
+
+        function formatearFecha(fechaISO) {
+            if (!fechaISO) return '❌';
+            
+            const fecha = new Date(fechaISO);
+            const hoy = new Date();
+            
+            hoy.setHours(0, 0, 0, 0);
+            fecha.setHours(0, 0, 0, 0);
+            
+            const diffDias = Math.floor((fecha - hoy) / (1000 * 60 * 60 * 24));
+            
+            if (diffDias === 0) return 'Hoy';
+            if (diffDias === -1) return 'Ayer';
+            if (diffDias === 1) return 'Mañana';
+            
+            const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            const dia = dias[fecha.getDay()];
+            const fechaFormato = fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+            
+            return `${dia} ${fechaFormato}`;
+        }
+
+        function formatearSoloHora(fechaISO, fechaEsperada = null) {
+            if (!fechaISO) return null;
+            const fecha = new Date(fechaISO);
+            
+            // Si hay fecha esperada y no coincide, mostrar día también
+            if (fechaEsperada) {
+                const esperada = new Date(fechaEsperada);
+                esperada.setHours(0, 0, 0, 0);
+                const actual = new Date(fechaISO);
+                actual.setHours(0, 0, 0, 0);
+                
+                if (esperada.getTime() !== actual.getTime()) {
+                    const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+                    const dia = dias[fecha.getDay()];
+                    const hora = fecha.toLocaleString('es-AR', { 
+                        timeZone: 'America/Argentina/Buenos_Aires',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    });
+                    return `${hora} (${dia})`;
+                }
+            }
+            
+            return fecha.toLocaleString('es-AR', { 
+                timeZone: 'America/Argentina/Buenos_Aires',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+        }
+
+        function esEntregaParaFecha(shipping, targetDate) {
+            const fechaEntrega = shipping.shipping_option?.estimated_delivery_time?.date || 
+                                shipping.shipping_option?.estimated_delivery_final?.date;
+            
+            if (!fechaEntrega) return false;
+            
+            const entrega = new Date(fechaEntrega);
+            entrega.setHours(0, 0, 0, 0);
+            
+            return entrega.getTime() === targetDate.getTime();
+        }
+
+        async function cargarFlexHoy() {
+            // Resetear filtros
+            currentStateFilter = 'all';
+            currentZoneFilter = 'all';
+            currentCuentaFilter = 'all';
+            mostrarCanceladas = false;
+            allFlexOrders = []; // Limpiar datos previos
+            
+            const hoy = new Date();
+            const diaSemana = hoy.getDay();
+            
+            // Si es fin de semana (sábado o domingo), buscar entregas del LUNES
+            let fechaBusqueda = new Date();
+            let label = 'HOY';
+            
+            if (diaSemana === 0) { // Domingo
+                fechaBusqueda.setDate(fechaBusqueda.getDate() + 1); // Lunes
+                label = 'LUNES';
+            } else if (diaSemana === 6) { // Sábado
+                fechaBusqueda.setDate(fechaBusqueda.getDate() + 2); // Lunes
+                label = 'LUNES';
+            }
+            
+            fechaBusqueda.setHours(0, 0, 0, 0);
+            await cargarFlexPorFecha(fechaBusqueda, label);
+        }
+
+        // PUNTO 2: Nueva función para día anterior (reemplaza cargarFlexAyer)
+        async function cargarFlexDiaAnterior() {
+            // Resetear filtros
+            currentStateFilter = 'all';
+            currentZoneFilter = 'all';
+            currentCuentaFilter = 'all';
+            mostrarCanceladas = false;
+            allFlexOrders = []; // Limpiar datos previos
+            
+            const diaAnterior = getDiaAnteriorLaborable();
+            const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            const nombreDia = dias[diaAnterior.getDay()].toUpperCase();
+            await cargarFlexPorFecha(diaAnterior, nombreDia);
+        }
+
+        async function cargarFechaCustom() {
+            const input = document.getElementById('fechaCustom');
+            if (!input.value) {
+                alert('Seleccioná una fecha primero');
+                return;
+            }
+            currentStateFilter = 'all';
+            currentZoneFilter = 'all';
+            currentCuentaFilter = 'all';
+            mostrarCanceladas = false;
+            allFlexOrders = [];
+            
+            const partes = input.value.split('-');
+            const fecha = new Date(partes[0], partes[1] - 1, partes[2]);
+            fecha.setHours(0, 0, 0, 0);
+            
+            const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            const label = `${dias[fecha.getDay()]} ${fecha.getDate()} ${meses[fecha.getMonth()]}`;
+            await cargarFlexPorFecha(fecha, label);
+        }
+
+        async function cargarReprogramados() {
+            const content = document.getElementById('content');
+            content.innerHTML = `<div class="loading"><div class="loading-spinner"></div><br>🔄 Buscando reprogramados de los últimos 15 días...</div>`;
+            
+            // Ocultar secciones normales
+            document.getElementById('filterSection').classList.add('hidden');
+            document.getElementById('statsSection').classList.add('hidden');
+            document.getElementById('sortSection').classList.add('hidden');
+            document.getElementById('btnMapa').classList.add('hidden');
+            
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            
+            const shippingIdsVistos = new Set();
+            let todosReprogramados = [];
+
+            for (const cuenta of CUENTAS) {
+                try {
+                    const token = await obtenerTokenCuenta(cuenta);
+                    if (!token) continue;
+
+                    const cuentaKey = cuenta.nombre.toLowerCase();
+                    let sellerId = sessionStorage.getItem(`${cuentaKey}_user_id`);
+                    if (!sellerId) {
+                        const tokenResponse = await fetch(`${cuenta.proxy}/get-token`);
+                        const tokenData = await tokenResponse.json();
+                        if (tokenData.user_id) {
+                            sellerId = tokenData.user_id;
+                            sessionStorage.setItem(`${cuentaKey}_user_id`, sellerId);
+                        }
+                    }
+                    if (!sellerId) continue;
+
+                    // Rango: 15 días atrás hasta hoy
+                    const dateFrom = new Date(hoy);
+                    dateFrom.setDate(dateFrom.getDate() - 15);
+                    const dateTo = new Date(hoy);
+                    dateTo.setDate(dateTo.getDate() + 1);
+                    dateTo.setHours(23, 59, 59, 0);
+                    
+                    const dateFromStr = dateFrom.toISOString().split('.')[0] + '.000-00:00';
+                    const dateToStr = dateTo.toISOString().split('.')[0] + '.000-00:00';
+                    const dateFilter = `&order.date_created.from=${encodeURIComponent(dateFromStr)}&order.date_created.to=${encodeURIComponent(dateToStr)}`;
+
+                    // Paginación inteligente: ir de a una página, parar cuando no haya más
+                    let allOrders = [];
+                    let page = 0;
+                    let hasMore = true;
+                    
+                    while (hasMore) {
+                        content.innerHTML = `<div class="loading"><div class="loading-spinner"></div><br>🔄 ${cuenta.nombre}: cargando página ${page + 1}... (${allOrders.length} órdenes encontradas)</div>`;
+                        
+                        const response = await fetch(`${cuenta.proxy}/api/orders/search?seller=${sellerId}&offset=${page * 50}&limit=50&sort=date_desc${dateFilter}`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await response.json();
+                        const results = data.results || [];
+                        allOrders.push(...results);
+                        
+                        // Parar si vino menos de 50 o llegamos al límite de la API
+                        if (results.length < 50 || allOrders.length >= (data.paging?.total || 9999)) {
+                            hasMore = false;
+                        }
+                        page++;
+                        
+                        // Seguridad: máximo 40 páginas (2000 órdenes)
+                        if (page >= 40) hasMore = false;
+                    }
+
+                    content.innerHTML = `<div class="loading"><div class="loading-spinner"></div><br>🔄 ${cuenta.nombre}: analizando ${allOrders.length} órdenes...</div>`;
+
+                    // Procesar en lotes de 10 para no saturar
+                    for (let i = 0; i < allOrders.length; i += 10) {
+                        const batch = allOrders.slice(i, i + 10);
+                        
+                        content.innerHTML = `<div class="loading"><div class="loading-spinner"></div><br>🔄 ${cuenta.nombre}: revisando envíos ${i + 1}-${Math.min(i + 10, allOrders.length)} de ${allOrders.length}...</div>`;
+                        
+                        const batchResults = await Promise.all(batch.map(async (order) => {
+                            try {
+                                const shippingId = order.shipping?.id;
+                                if (!shippingId || shippingIdsVistos.has(shippingId)) return null;
+                                shippingIdsVistos.add(shippingId);
+
+                                const shipResponse = await fetch(`${cuenta.proxy}/api/shipments/${shippingId}`, {
+                                    headers: { 'Authorization': `Bearer ${token}` }
+                                });
+                                const shipping = await shipResponse.json();
+                                
+                                if (shipping.logistic_type !== 'self_service') return null;
+                                
+                                const state = getOrderState(shipping);
+                                if (state === 'reprogramado') {
+                                    return {
+                                        order,
+                                        shipping,
+                                        orders: [order],
+                                        cuentaNombre: cuenta.nombre,
+                                        cuentaColor: cuenta.color
+                                    };
+                                }
+                                return null;
+                            } catch (e) {
+                                return null;
+                            }
+                        }));
+                        
+                        todosReprogramados.push(...batchResults.filter(r => r !== null));
+                    }
+                } catch (error) {
+                    console.error(`Error buscando reprogramados de ${cuenta.nombre}:`, error);
+                }
+            }
+
+            // Ordenar por fecha de entrega estimada (más viejo primero = más urgente)
+            todosReprogramados.sort((a, b) => {
+                const fechaA = a.shipping.shipping_option?.estimated_delivery_time?.date || 
+                               a.shipping.shipping_option?.estimated_delivery_final?.date || '';
+                const fechaB = b.shipping.shipping_option?.estimated_delivery_time?.date || 
+                               b.shipping.shipping_option?.estimated_delivery_final?.date || '';
+                return fechaA.localeCompare(fechaB);
+            });
+
+            // Mostrar resultados
+            document.getElementById('badgeFecha').textContent = `🔄 REPROGRAMADOS (15 días)`;
+            document.getElementById('badgeCaba').textContent = `📦 Total: ${todosReprogramados.length}`;
+            document.getElementById('badgeProvincia').textContent = '';
+            document.getElementById('infoBadges').style.display = 'flex';
+
+            if (todosReprogramados.length === 0) {
+                content.innerHTML = '<div class="no-results" style="padding:40px; text-align:center; font-size:18px;">✅ No hay envíos reprogramados en los últimos 15 días</div>';
+                return;
+            }
+
+            const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            let html = `<div style="background:#FF9800; color:#000; padding:12px 20px; border-radius:10px; text-align:center; font-weight:bold; font-size:16px; margin-bottom:20px;">
+                🔄 ${todosReprogramados.length} envío${todosReprogramados.length > 1 ? 's' : ''} reprogramado${todosReprogramados.length > 1 ? 's' : ''} en los últimos 15 días
+            </div>`;
+
+            todosReprogramados.forEach(({ shipping, orders: orderList, cuentaNombre, cuentaColor }) => {
+                const detail = getReprogramadoDetail(shipping);
+                const barrio = shipping.receiver_address?.neighborhood?.name || '';
+                const ciudad = shipping.receiver_address?.city?.name || '';
+                const zona = getZonaDetallada(barrio, ciudad);
+                const calle = shipping.receiver_address?.street_name || '';
+                const numero = shipping.receiver_address?.street_number || '';
+                const provincia = shipping.receiver_address?.state?.name || '';
+                const direccionCompleta = `${calle} ${numero}, ${ciudad}, ${provincia}`;
+                const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(direccionCompleta)}`;
+                
+                const comprador = orderList[0]?.buyer?.nickname || 'N/A';
+                const orderId = orderList[0]?.id || '';
+                const orderUrl = `https://www.mercadolibre.com.ar/ventas/${orderId}/detalle`;
+
+                const fechaEntrega = shipping.shipping_option?.estimated_delivery_time?.date || 
+                                    shipping.shipping_option?.estimated_delivery_final?.date;
+                
+                let diasAtraso = '';
+                let fechaLabel = '';
+                let urgenciaColor = '#FF9800';
+                if (fechaEntrega) {
+                    const entrega = new Date(fechaEntrega);
+                    entrega.setHours(0, 0, 0, 0);
+                    const diffMs = hoy.getTime() - entrega.getTime();
+                    const diffDias = Math.round(diffMs / (1000 * 60 * 60 * 24));
+                    
+                    fechaLabel = `${dias[entrega.getDay()]} ${entrega.getDate()}/${entrega.getMonth() + 1}`;
+                    
+                    if (diffDias > 0) {
+                        diasAtraso = `hace ${diffDias} día${diffDias > 1 ? 's' : ''}`;
+                        if (diffDias >= 5) urgenciaColor = '#f44336';
+                        else if (diffDias >= 3) urgenciaColor = '#FF6B00';
+                    } else if (diffDias === 0) {
+                        diasAtraso = 'HOY';
+                        urgenciaColor = '#FFE600';
+                    } else {
+                        diasAtraso = `en ${Math.abs(diffDias)} día${Math.abs(diffDias) > 1 ? 's' : ''}`;
+                        urgenciaColor = '#00d9ff';
+                    }
+                }
+
+                // Badge de cuenta
+                const cuentaBadge = cuentaNombre === 'Mikra' 
+                    ? '<span style="background:#9C27B0; color:white; padding:3px 10px; border-radius:10px; font-size:11px;">🟣 Mikra</span>'
+                    : '<span style="background:#FF6B00; color:white; padding:3px 10px; border-radius:10px; font-size:11px;">🟠 Chaya</span>';
+
+                html += `
+                    <div class="envio-card reprogramado" style="position:relative;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+                            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                                <span class="estado-badge reprogramado">${detail.label}</span>
+                                ${cuentaBadge}
+                            </div>
+                            <div style="text-align:right;">
+                                <a href="${orderUrl}" target="_blank" class="order-link" style="font-size:13px;">#${orderId}</a>
+                            </div>
                         </div>
-                        ${comment?`<div style="margin-top:6px"><span class="card-comment">${comment}</span></div>`:''}
-                        <div class="detail-grid" style="margin-top:8px">
-                            <div class="detail-item"><div class="detail-label">Dirección</div><div class="detail-val"><a href="${gmap}" target="_blank" onclick="event.stopPropagation()">${calle} ${num}, ${ciudad}</a></div></div>
-                            <div class="detail-item"><div class="detail-label">Comprador</div><div class="detail-val">${comp}</div></div>
-                            <div class="detail-item"><div class="detail-label">Entrega</div><div class="detail-val ${esHoy?'hoy':''}">${fechaF}</div></div>
-                            <div class="detail-item"><div class="detail-label">Cuenta</div><div class="detail-val">${cuentaNombre}</div></div>
+                        
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+                            ${fechaLabel ? `
+                            <div style="background:${urgenciaColor}; color:#000; padding:8px 14px; border-radius:8px; font-weight:bold; font-size:14px; display:flex; align-items:center; gap:8px;">
+                                📅 ${fechaLabel}
+                                <span style="background:rgba(0,0,0,0.2); padding:3px 8px; border-radius:6px; font-size:12px;">${diasAtraso}</span>
+                            </div>` : ''}
                         </div>
-                        <div class="timeline">
-                            <div class="tl-step"><div class="tl-dot done"></div><div class="tl-text">Recibida</div><div class="tl-time">${formatearSoloHora(fc,fe)||'—'}</div></div>
-                            <div class="tl-line ${hist.date_shipped?'done':''}"></div>
-                            <div class="tl-step"><div class="tl-dot ${hist.date_shipped?'done':''}"></div><div class="tl-text">Enviado</div><div class="tl-time ${hist.date_shipped?'':'pending'}">${formatearSoloHora(hist.date_shipped,fe)||'—'}</div></div>
-                            <div class="tl-line ${hist.date_delivered?'done':''}"></div>
-                            <div class="tl-step"><div class="tl-dot ${hist.date_delivered?'done':''}"></div><div class="tl-text">Entregado</div><div class="tl-time ${hist.date_delivered?'':'pending'}">${formatearSoloHora(hist.date_delivered,fe)||'—'}</div></div>
-                        </div>
-                        ${renderTracking(shipping)}
-                        ${renderRepBadge(shipping)}
-                        ${productos.length?`<button class="products-toggle" onclick="event.stopPropagation();toggleProducts(${idx})">📦 Ver artículos (${productos.length})</button>
-                        <div class="products-list" id="prod-${idx}"><div class="products-inner">${productos.map(i=>`<div>· ${i.description} <span style="color:var(--text3)">x${i.quantity}</span></div>`).join('')}</div></div>`:''}
-                        <div class="card-links">
-                            <a href="${oUrl}" target="_blank" class="card-link" onclick="event.stopPropagation()">📋 #${oid}</a>
-                            <a href="${gmap}" target="_blank" class="card-link" onclick="event.stopPropagation()">📍 Maps</a>
+
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
+                            <div class="info-item">
+                                <div class="info-label">🌍 ZONA</div>
+                                <div class="info-value zona-highlight" style="font-size:14px;">${zona}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">👤 COMPRADOR</div>
+                                <div class="info-value">${comprador}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">📍 DIRECCIÓN</div>
+                                <div class="info-value">
+                                    <a href="${googleMapsUrl}" target="_blank" class="direccion-link" style="font-size:12px;">${calle} ${numero}, ${ciudad}</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                `;
+            });
+
+            // Botón para volver
+            html += `<div style="text-align:center; margin-top:20px;">
+                <button onclick="cargarFlexHoy()" style="background:#3483FA; padding:12px 30px; font-size:15px;">🔙 Volver a HOY</button>
             </div>`;
+
+            content.innerHTML = html;
+        }
+
+        async function cargarFlexPorFecha(targetDate, label) {
+            const content = document.getElementById('content');
+            content.innerHTML = `<div class="loading"><div class="loading-spinner"></div><br>Cargando entregas de ${label}...</div>`;
+            
+            let allOrdersFromAllAccounts = [];
+            const shippingIdsVistos = new Set();
+
+            for (const cuenta of CUENTAS) {
+                try {
+                    const token = await obtenerTokenCuenta(cuenta);
+                    if (!token) {
+                        console.error(`No hay token para ${cuenta.nombre}`);
+                        continue;
+                    }
+
+                    const ordersFromAccount = await cargarOrdenesDeCuenta(cuenta, token, targetDate);
+                    
+                    ordersFromAccount.forEach(item => {
+                        const shippingId = item.shipping.id;
+                        if (!shippingIdsVistos.has(shippingId)) {
+                            shippingIdsVistos.add(shippingId);
+                            allOrdersFromAllAccounts.push({
+                                ...item,
+                                cuentaNombre: cuenta.nombre,
+                                cuentaColor: cuenta.color
+                            });
+                        }
+                    });
+                } catch (error) {
+                    console.error(`Error cargando cuenta ${cuenta.nombre}:`, error);
+                }
+            }
+
+            if (allOrdersFromAllAccounts.length === 0) {
+                content.innerHTML = `
+                    <div class="error">
+                        ⚠️ No hay envíos FLEX para ${label}<br><br>
+                        Si este es el primer uso, ejecutá el setup primero para configurar las cuentas.
+                        <br><br>
+                        <button onclick="window.location.href='setup-flex-seguro.html'" style="margin-top:15px;">
+                            ⚙️ Ir a Configuración
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            // FILTRAR CANCELADAS: Solo mostrar canceladas si son para HOY (targetDate)
+            allFlexOrders = allOrdersFromAllAccounts.filter(({ shipping }) => {
+                const state = getOrderState(shipping);
+                
+                // Si es cancelada, verificar que sea para la fecha objetivo
+                if (state === 'cancelado') {
+                    return esEntregaParaFecha(shipping, targetDate);
+                }
+                
+                // Todas las demás pasan
+                return true;
+            });
+
+            logShippingStates();
+
+            // Calcular zonas sin canceladas
+            const zonaCounts = new Map();
+            let cabaCount = 0;
+            let provinciaCount = 0;
+            
+            allFlexOrders.forEach(({ shipping }) => {
+                const state = getOrderState(shipping);
+                if (state === 'cancelado') return;
+                
+                const barrio = shipping.receiver_address?.neighborhood?.name || '';
+                const ciudad = shipping.receiver_address?.city?.name || '';
+                const zipCode = shipping.receiver_address?.zip_code || '';
+                    const zona = getZonaDetallada(barrio, ciudad, zipCode);
+                zonaCounts.set(zona, (zonaCounts.get(zona) || 0) + 1);
+                
+                // Contar CABA vs Provincia
+                if (esCABA(zona)) {
+                    cabaCount++;
+                } else {
+                    provinciaCount++;
+                }
+            });
+
+            // Actualizar badges de información
+            document.getElementById('badgeFecha').textContent = `📅 ${label}`;
+            document.getElementById('badgeCaba').textContent = `🏙️ CABA: ${cabaCount}`;
+            document.getElementById('badgeProvincia').textContent = `🗺️ Provincia: ${provinciaCount}`;
+            document.getElementById('infoBadges').style.display = 'flex';
+
+            const dropdownItems = document.getElementById('dropdownItems');
+            const totalSinCanceladas = allFlexOrders.filter(({shipping}) => getOrderState(shipping) !== 'cancelado').length;
+            dropdownItems.innerHTML = `<div class="dropdown-item" onclick="selectZone('all')">Todas las zonas (${totalSinCanceladas})</div>`;
+            
+            let cabaTotal = 0;
+            Array.from(zonaCounts.entries()).forEach(([zona, count]) => {
+                if (esCABA(zona)) cabaTotal += count;
+            });
+            if (cabaTotal > 0) {
+                dropdownItems.innerHTML += `<div class="dropdown-item" onclick="selectZone('CABA')">🏙️ CABA - Todos (${cabaTotal})</div>`;
+            }
+            
+            Array.from(zonaCounts.entries()).sort().forEach(([zona, count]) => {
+                dropdownItems.innerHTML += `<div class="dropdown-item" onclick="selectZone('${zona}')">${zona} (${count})</div>`;
+            });
+
+            document.getElementById('filterSection').classList.remove('hidden');
+            document.getElementById('statsSection').classList.remove('hidden');
+            document.getElementById('sortSection').classList.remove('hidden');
+            document.getElementById('btnMapa').classList.remove('hidden');
+            displayOrders('all');
+        }
+
+        async function cargarOrdenesDeCuenta(cuenta, token, targetDate) {
+            let tempOrders = [];
+            
+            const allOrderPromises = [];
+            const totalPages = 20;
+
+            const cuentaKey = cuenta.nombre.toLowerCase();
+            let sellerId = sessionStorage.getItem(`${cuentaKey}_user_id`);
+
+            if (!sellerId) {
+                try {
+                    const tokenResponse = await fetch(`${cuenta.proxy}/get-token`);
+                    const tokenData = await tokenResponse.json();
+                    if (tokenData.user_id) {
+                        sellerId = tokenData.user_id;
+                        sessionStorage.setItem(`${cuentaKey}_user_id`, sellerId);
+                    }
+                } catch (error) {
+                    console.error(`Error obteniendo user_id para ${cuenta.nombre}:`, error);
+                }
+            }
+
+            if (!sellerId) {
+                console.error(`No se encontró user_id para ${cuenta.nombre}`);
+                return [];
+            }
+
+            // Calcular rango de fechas: desde 3 días antes hasta 1 día después de la fecha objetivo
+            const dateFrom = new Date(targetDate);
+            dateFrom.setDate(dateFrom.getDate() - 3);
+            const dateTo = new Date(targetDate);
+            dateTo.setDate(dateTo.getDate() + 1);
+            dateTo.setHours(23, 59, 59, 0);
+            
+            const dateFromStr = dateFrom.toISOString().split('.')[0] + '.000-00:00';
+            const dateToStr = dateTo.toISOString().split('.')[0] + '.000-00:00';
+            const dateFilter = `&order.date_created.from=${encodeURIComponent(dateFromStr)}&order.date_created.to=${encodeURIComponent(dateToStr)}`;
+
+            for (let page = 0; page < totalPages; page++) {
+                allOrderPromises.push(
+                    fetch(`${cuenta.proxy}/api/orders/search?seller=${sellerId}&offset=${page * 50}&limit=50&sort=date_desc${dateFilter}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }).then(r => r.json())
+                );
+            }
+
+            const allPagesData = await Promise.all(allOrderPromises);
+            const allOrders = allPagesData.flatMap(data => data.results || []);
+
+            const shippingPromises = allOrders.map(async (order) => {
+                try {
+                    const shippingId = order.shipping?.id;
+                    if (!shippingId) return null;
+
+                    const shipResponse = await fetch(`${cuenta.proxy}/api/shipments/${shippingId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    const shipping = await shipResponse.json();
+                    
+                    if (shipping.logistic_type === 'self_service') {
+                        if (esEntregaParaFecha(shipping, targetDate) || 
+                            shipping.status === 'cancelled' || 
+                            shipping.status === 'not_delivered') {
+                            return { order, shipping };
+                        }
+                    }
+                    return null;
+                } catch (e) {
+                    return null;
+                }
+            });
+
+            const results = await Promise.all(shippingPromises);
+            tempOrders = results.filter(item => item !== null);
+
+            // Enriquecer datos con tracking detallado (síncrono, datos ya en shipping)
+            tempOrders.forEach(({ order, shipping }) => {
+                enrichShippingData(null, null, shipping, order.id);
+            });
+
+            const uniqueShippings = new Map();
+            tempOrders.forEach(({ order, shipping }) => {
+                const shippingId = shipping.id;
+                if (!uniqueShippings.has(shippingId)) {
+                    uniqueShippings.set(shippingId, { orders: [order], shipping });
+                } else {
+                    uniqueShippings.get(shippingId).orders.push(order);
+                }
+            });
+
+            return Array.from(uniqueShippings.values());
+        }
+
+        function toggleTools() {
+            const panel = document.getElementById('toolsPanel');
+            panel.classList.toggle('open');
+        }
+
+        function toggleVista() {
+            vistaSimple = !vistaSimple;
+            const btn = document.getElementById('toggleVistaBtn');
+            btn.textContent = vistaSimple ? '📊 Vista Completa' : '📋 Vista Simple';
+            aplicarFiltros();
+        }
+
+        // PUNTO 8: Toggle para expandir detalles en vista simple
+        function toggleSimpleDetails(index) {
+            const details = document.getElementById(`simple-details-${index}`);
+            if (details) {
+                details.classList.toggle('expanded');
+            }
+        }
+
+        function getOrderState(shipping) {
+            const status = (shipping.status || '').toLowerCase();
+            const substatus = (shipping.substatus || '').toLowerCase();
+            const history = shipping.status_history || {};
+            const tags = shipping.tags || [];
+            const tagsLower = tags.map(t => (t || '').toLowerCase());
+            
+            // Primero: detectar reprogramados (incluye not_delivered con substatus específico)
+            if (substatus === 'rescheduled' || substatus === 'rescheduled_by_buyer' ||
+                substatus === 'buyer_rescheduled' ||
+                substatus === 'delayed' || substatus === 'returning_to_sender' ||
+                substatus === 'waiting_for_withdrawal' || substatus === 'receiver_absent' ||
+                substatus === 'out_of_delivery_area' || substatus === 'not_delivered_and_returning' ||
+                substatus === 'delivery_failed' ||
+                tagsLower.includes('rescheduled') || tagsLower.includes('delayed') ||
+                tagsLower.includes('return_to_sender')) {
+                return 'reprogramado';
+            }
+
+            // not_delivered sin substatus de cancelación → reprogramado
+            if (status === 'not_delivered' && !substatus.includes('cancel')) {
+                return 'reprogramado';
+            }
+            
+            // Cancelados
+            if (status === 'cancelled' ||
+                substatus === 'cancelled' || substatus === 'buyer_cancelled' || 
+                substatus === 'cancelled_by_buyer' || substatus === 'cancelled_manually' ||
+                tagsLower.includes('cancelled') ||
+                (status === 'not_delivered' && substatus.includes('cancel'))) {
+                return 'cancelado';
+            }
+            
+            if (history.date_delivered) {
+                return 'entregado';
+            }
+            
+            if (history.date_shipped) {
+                return 'en-camino';
+            }
+            
+            return 'pendiente';
+        }
+
+        function getReprogramadoDetail(shipping) {
+            const substatus = (shipping.substatus || '').toLowerCase();
+            if (substatus === 'receiver_absent') return { label: '🚫 Comprador ausente', short: 'Comprador ausente' };
+            if (substatus === 'buyer_rescheduled' || substatus === 'rescheduled_by_buyer' || substatus === 'rescheduled') return { label: '📅 Reprogramado por comprador', short: 'Reprogram. comprador' };
+            if (substatus === 'delayed') return { label: '⏰ Demorado', short: 'Demorado' };
+            if (substatus === 'returning_to_sender' || substatus === 'not_delivered_and_returning') return { label: '↩️ Devolviendo al vendedor', short: 'Devolviendo' };
+            if (substatus === 'out_of_delivery_area') return { label: '📍 Fuera de zona', short: 'Fuera de zona' };
+            if (substatus === 'delivery_failed') return { label: '❌ Entrega fallida', short: 'Entrega fallida' };
+            if (substatus === 'waiting_for_withdrawal') return { label: '📦 Esperando retiro', short: 'Esperando retiro' };
+            return { label: '🔄 Reprogramado', short: 'Reprogramado' };
+        }
+
+        // === TRACKING DETALLADO - Clasifica eventos del historial de ML ===
+        function classifyTrackingEvent(event) {
+            const label = (event.label || '').toLowerCase();
+            const sub = (event.substatus || '').toLowerCase();
+            
+            if (sub === 'receiver_absent' || label.includes('ausente')) return { icon: 'absent', css: 'highlight-absent' };
+            if (sub === 'nearby' || sub === 'almost_there' || label.includes('muy cerca')) return { icon: 'near', css: 'highlight-near' };
+            if (sub === 'rescheduled' || label.includes('nuevamente') || label.includes('reintento')) return { icon: 'retry', css: '' };
+            if (sub === 'delivered' || label.includes('entregamos')) return { icon: 'delivered', css: '' };
+            if (sub === 'in_transit' || sub === 'out_for_delivery' || sub === 'shipped' || label.includes('en camino')) return { icon: 'shipped', css: '' };
+            if (sub === 'returning_to_sender' || sub === 'not_delivered_and_returning' || label.includes('devolv')) return { icon: 'absent', css: 'highlight-absent' };
+            if (sub === 'delivery_failed' || label.includes('fallid')) return { icon: 'absent', css: 'highlight-absent' };
+            return { icon: 'default', css: '' };
+        }
+
+        function renderTrackingDetail(shipping) {
+            const events = shipping._trackingEvents;
+            if (!events || events.length === 0) return '';
+
+            let html = '<div class="tracking-detail">';
+            html += '<div style="font-size:11px; color:#888; margin-bottom:6px; font-weight:bold;">📋 HISTORIAL DE RASTREO</div>';
+            
+            events.forEach(ev => {
+                const cls = classifyTrackingEvent(ev);
+                html += `<div class="tracking-event ${cls.css}">
+                    <div class="track-icon ${cls.icon}"></div>
+                    <div class="track-msg">${ev.label}</div>
+                </div>`;
+            });
+            
+            html += '</div>';
+            return html;
+        }
+
+        function renderDriverInfo(shipping) {
+            const driver = shipping._driverName;
+            if (!driver) return '';
+            return `<span class="driver-info">🚗 ${driver}</span>`;
+        }
+
+        function renderReputationBadge(shipping) {
+            const problems = shipping._problems;
+            if (!problems || problems.length === 0) return '';
+            
+            return problems.map(p => {
+                if (p.reputationAffected) {
+                    return `<span class="reputation-warning">⚠️ Reputación afectada (${p.type})</span>`;
+                } else {
+                    return `<span class="reputation-ok">✓ Rep. no afectada (${p.type})</span>`;
+                }
+            }).join(' ');
+        }
+
+        // Enriquecer datos de shipping con info extra del detalle de ML
+        function enrichShippingData(cuenta, token, shipping, orderId) {
+            // El substatus_history ya viene en el shipping object
+            // Lo convertimos a tracking events legibles
+            const subHistory = shipping.substatus_history || [];
+            const history = shipping.status_history || {};
+            let events = [];
+
+            // Mapeo de substatus a textos legibles (como los muestra ML)
+            const substatusLabels = {
+                'shipment_paid': 'Preparando envío',
+                'ready_to_ship': 'Listo para enviar',
+                'picked_up': 'Retirado por el transportista',
+                'in_hub': 'En centro de distribución',
+                'in_transit': 'El paquete está en camino.',
+                'out_for_delivery': 'El paquete está en camino.',
+                'nearby': 'El paquete está muy cerca.',
+                'almost_there': 'El paquete está muy cerca.',
+                'receiver_absent': 'Comprador ausente.',
+                'waiting_for_withdrawal': 'Esperando retiro en punto de entrega.',
+                'delivered': 'Entregamos el paquete.',
+                'returning_to_sender': 'Devolviendo al vendedor.',
+                'not_delivered_and_returning': 'No se pudo entregar, en devolución.',
+                'rescheduled': 'El paquete está en camino nuevamente.',
+                'rescheduled_by_buyer': 'Reprogramado por el comprador.',
+                'buyer_rescheduled': 'Reprogramado por el comprador.',
+                'delayed': 'Envío demorado.',
+                'out_of_delivery_area': 'Fuera de zona de entrega.',
+                'delivery_failed': 'Entrega fallida.',
+                'claimed_me': 'Reclamo abierto.',
+                'stolen': 'Paquete robado.',
+                'lost': 'Paquete extraviado.',
+                'damaged': 'Paquete dañado.',
+                'cancelled': 'Envío cancelado.',
+                'buyer_cancelled': 'Cancelado por el comprador.',
+                'cancelled_by_buyer': 'Cancelado por el comprador.',
+            };
+
+            // Construir eventos desde substatus_history
+            if (subHistory.length > 0) {
+                subHistory.forEach(entry => {
+                    const dateStr = entry.date ? formatDateShort(entry.date) : '';
+                    const label = substatusLabels[entry.substatus] || entry.substatus || entry.status || '';
+                    if (label) {
+                        events.push({ label: `${dateStr} | ${label}`, substatus: entry.substatus });
+                    }
+                });
+            }
+
+            // Agregar eventos del status_history que no estén ya cubiertos
+            if (history.date_shipped && !events.some(e => e.substatus === 'in_transit' || e.substatus === 'out_for_delivery')) {
+                events.push({ label: `${formatDateShort(history.date_shipped)} | El paquete está en camino.`, substatus: 'shipped' });
+            }
+            if (history.date_delivered && !events.some(e => e.substatus === 'delivered')) {
+                events.push({ label: `${formatDateShort(history.date_delivered)} | Entregamos el paquete.`, substatus: 'delivered' });
+            }
+            if (history.date_not_delivered) {
+                events.push({ label: `${formatDateShort(history.date_not_delivered)} | No se pudo entregar.`, substatus: 'not_delivered' });
+            }
+
+            // Eliminar duplicados y ordenar por fecha
+            const seen = new Set();
+            events = events.filter(e => {
+                const key = e.label;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+
+            if (events.length > 0) {
+                shipping._trackingEvents = events;
+            }
+
+            // Detectar problemas de reputación desde substatus_history
+            const problemSubstatuses = ['delayed', 'delivery_failed', 'receiver_absent', 'lost', 'stolen', 'damaged'];
+            const problems = [];
+            
+            // Si el envío es not_delivered o tiene substatus problemático
+            if (shipping.status === 'not_delivered' || problemSubstatuses.includes(shipping.substatus)) {
+                problems.push({
+                    type: shipping.substatus || shipping.status,
+                    reputationAffected: false // No podemos saber desde la API, asumimos no afectada
+                });
+            }
+            
+            if (problems.length > 0) {
+                shipping._problems = problems;
+            }
+        }
+
+        function formatDateShort(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            return d.toLocaleString('es-AR', {
+                timeZone: 'America/Argentina/Buenos_Aires',
+                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false
+            });
+        }
+
+        function logShippingStates() {
+            console.log('=== ESTADOS DE ENVÍOS ===');
+            allFlexOrders.forEach(({ shipping, cuentaNombre }) => {
+                const state = getOrderState(shipping);
+                if (state === 'cancelado' || state === 'reprogramado' || state === 'pendiente') {
+                    console.log(`[${cuentaNombre}] ID:${shipping.id} | status:"${shipping.status}" | substatus:"${shipping.substatus}" | tags:${JSON.stringify(shipping.tags)} → ${state}`);
+                }
+            });
+        }
+
+        function filtrarPorCuenta(cuenta) {
+            currentCuentaFilter = cuenta;
+            document.querySelectorAll('.cuenta-btn:not(.canceladas-toggle)').forEach(el => el.classList.remove('active'));
+            if (cuenta === 'all') {
+                document.querySelector('.cuenta-btn.all').classList.add('active');
+            } else if (cuenta === 'Mikra') {
+                document.querySelector('.cuenta-btn.mikra-btn').classList.add('active');
+            } else if (cuenta === 'Chaya') {
+                document.querySelector('.cuenta-btn.chaya-btn').classList.add('active');
+            }
+            if (mostrarCanceladas) {
+                mostrarCanceladas = false;
+                document.getElementById('toggleCanceladasBtn').classList.remove('active');
+                currentStateFilter = 'all';
+                document.querySelectorAll('.stat-item').forEach(el => el.classList.remove('active'));
+                document.getElementById('stat-all').classList.add('active');
+            }
+            aplicarFiltros();
+        }
+
+        function toggleCanceladas() {
+            mostrarCanceladas = !mostrarCanceladas;
+            const btn = document.getElementById('toggleCanceladasBtn');
+            if (mostrarCanceladas) {
+                btn.classList.add('active');
+                currentStateFilter = 'cancelado';
+                document.querySelectorAll('.stat-item').forEach(el => el.classList.remove('active'));
+            } else {
+                btn.classList.remove('active');
+                currentStateFilter = 'all';
+                document.querySelectorAll('.stat-item').forEach(el => el.classList.remove('active'));
+                document.getElementById('stat-all').classList.add('active');
+            }
+            aplicarFiltros();
+        }
+
+        function filtrarPorEstado(estado) {
+            if (estado !== 'cancelado') {
+                mostrarCanceladas = false;
+                document.getElementById('toggleCanceladasBtn').classList.remove('active');
+            }
+            currentStateFilter = estado;
+            document.querySelectorAll('.stat-item').forEach(el => el.classList.remove('active'));
+            if (document.getElementById(`stat-${estado}`)) {
+                document.getElementById(`stat-${estado}`).classList.add('active');
+            }
+            aplicarFiltros();
+        }
+
+        function ordenarPor(tipo) {
+            currentSort = tipo;
+            
+            document.querySelectorAll('.sort-btn').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            aplicarFiltros();
+        }
+
+        function aplicarFiltros() {
+            let filtered = allFlexOrders;
+
+            if (currentCuentaFilter !== 'all') {
+                filtered = filtered.filter(({ cuentaNombre }) => cuentaNombre === currentCuentaFilter);
+            }
+
+            // PUNTO 5: Canceladas no aparecen en listado por defecto
+            if (currentStateFilter === 'cancelado') {
+                filtered = filtered.filter(({ shipping }) => getOrderState(shipping) === 'cancelado');
+            } else if (currentStateFilter === 'all') {
+                filtered = filtered.filter(({ shipping }) => getOrderState(shipping) !== 'cancelado');
+            } else {
+                filtered = filtered.filter(({ shipping }) => getOrderState(shipping) === currentStateFilter);
+            }
+
+            if (currentZoneFilter !== 'all') {
+                filtered = filtered.filter(({ shipping }) => {
+                    const barrio = shipping.receiver_address?.neighborhood?.name || '';
+                    const ciudad = shipping.receiver_address?.city?.name || '';
+                    const zipCode = shipping.receiver_address?.zip_code || '';
+                    const zona = getZonaDetallada(barrio, ciudad, zipCode);
+                    
+                    if (currentZoneFilter === 'CABA') {
+                        return esCABA(zona);
+                    }
+                    
+                    return zona === currentZoneFilter;
+                });
+            }
+
+            // PUNTO 7: Ordenamiento por hora de entrega corregido
+            if (currentSort === 'zona') {
+                filtered.sort((a, b) => {
+                    const zonaA = getZonaDetallada(
+                        a.shipping.receiver_address?.neighborhood?.name || '',
+                        a.shipping.receiver_address?.city?.name || '',
+                        a.shipping.receiver_address?.zip_code || ''
+                    );
+                    const zonaB = getZonaDetallada(
+                        b.shipping.receiver_address?.neighborhood?.name || '',
+                        b.shipping.receiver_address?.city?.name || '',
+                        b.shipping.receiver_address?.zip_code || ''
+                    );
+                    return zonaA.localeCompare(zonaB);
+                });
+            } else if (currentSort === 'fecha-entrega') {
+                filtered.sort((a, b) => {
+                    const fechaA = a.shipping.shipping_option?.estimated_delivery_time?.date || 
+                                  a.shipping.shipping_option?.estimated_delivery_final?.date || '';
+                    const fechaB = b.shipping.shipping_option?.estimated_delivery_time?.date || 
+                                  b.shipping.shipping_option?.estimated_delivery_final?.date || '';
+                    return fechaA.localeCompare(fechaB);
+                });
+            } else if (currentSort === 'hora-entrega') {
+                // FIX: Ordenar por timestamp completo en lugar de strings
+                filtered.sort((a, b) => {
+                    const horaA = a.shipping.status_history?.date_delivered || 
+                                 a.shipping.status_history?.date_shipped || 
+                                 a.shipping.date_created || '';
+                    const horaB = b.shipping.status_history?.date_delivered || 
+                                 b.shipping.status_history?.date_shipped || 
+                                 b.shipping.date_created || '';
+                    
+                    // Convertir a timestamp para comparación numérica
+                    const timeA = horaA ? new Date(horaA).getTime() : 0;
+                    const timeB = horaB ? new Date(horaB).getTime() : 0;
+                    
+                    return timeB - timeA; // Más reciente primero
+                });
+            } else if (currentSort === 'estado') {
+                const ordenEstados = { 'cancelado': 0, 'reprogramado': 1, 'pendiente': 2, 'en-camino': 3, 'entregado': 4 };
+                filtered.sort((a, b) => {
+                    const estadoA = ordenEstados[getOrderState(a.shipping)];
+                    const estadoB = ordenEstados[getOrderState(b.shipping)];
+                    return estadoA - estadoB;
+                });
+            } else if (currentSort === 'recientes') {
+                filtered.sort((a, b) => {
+                    const fechaA = a.shipping.date_created || '';
+                    const fechaB = b.shipping.date_created || '';
+                    return fechaB.localeCompare(fechaA);
+                });
+            }
+
+            displayOrders(currentStateFilter, filtered);
+        }
+
+        function displayOrders(filterType, customFiltered = null) {
+            const orders = customFiltered || allFlexOrders;
+
+            let ordersForStats = allFlexOrders;
+            if (currentCuentaFilter !== 'all') {
+                ordersForStats = ordersForStats.filter(({ cuentaNombre }) => cuentaNombre === currentCuentaFilter);
+            }
+
+            const stats = {
+                pendiente: ordersForStats.filter(({ shipping }) => getOrderState(shipping) === 'pendiente').length,
+                enCamino: ordersForStats.filter(({ shipping }) => getOrderState(shipping) === 'en-camino').length,
+                entregado: ordersForStats.filter(({ shipping }) => getOrderState(shipping) === 'entregado').length,
+                cancelado: ordersForStats.filter(({ shipping }) => getOrderState(shipping) === 'cancelado').length,
+                reprogramado: ordersForStats.filter(({ shipping }) => getOrderState(shipping) === 'reprogramado').length
+            };
+            stats.total = stats.pendiente + stats.enCamino + stats.entregado + stats.reprogramado;
+
+            // PUNTO 6: Actualizar contadores por cuenta
+            const mikraOrders = allFlexOrders.filter(({ cuentaNombre, shipping }) => 
+                cuentaNombre === 'Mikra' && getOrderState(shipping) !== 'cancelado'
+            ).length;
+            const chayaOrders = allFlexOrders.filter(({ cuentaNombre, shipping }) => 
+                cuentaNombre === 'Chaya' && getOrderState(shipping) !== 'cancelado'
+            ).length;
+            const totalOrders = allFlexOrders.filter(({ shipping }) => 
+                getOrderState(shipping) !== 'cancelado'
+            ).length;
+
+            document.getElementById('allCount').textContent = totalOrders;
+            document.getElementById('mikraCount').textContent = mikraOrders;
+            document.getElementById('chayaCount').textContent = chayaOrders;
+
+            document.querySelector('#stat-all .stat-number').textContent = stats.total;
+            document.querySelector('#stat-pendiente .stat-number').textContent = stats.pendiente;
+            document.querySelector('#stat-en-camino .stat-number').textContent = stats.enCamino;
+            document.querySelector('#stat-entregado .stat-number').textContent = stats.entregado;
+            document.querySelector('#stat-reprogramado .stat-number').textContent = stats.reprogramado;
+            document.getElementById('canceladasCount').textContent = stats.cancelado;
+
+            const cancelBtn = document.getElementById('toggleCanceladasBtn');
+            cancelBtn.style.display = stats.cancelado > 0 ? 'inline-flex' : 'none';
+            const separators = document.querySelectorAll('.cuenta-separator');
+            separators.forEach(s => s.style.display = stats.cancelado > 0 ? 'inline' : 'none');
+
+            const totalSinCancel = stats.total || 1;
+            const pendientePct = (stats.pendiente / totalSinCancel) * 100;
+            const enCaminoPct = (stats.enCamino / totalSinCancel) * 100;
+            const entregadoPct = (stats.entregado / totalSinCancel) * 100;
+            const reprogramadoPct = (stats.reprogramado / totalSinCancel) * 100;
+
+            const progressBar = document.getElementById('progressBar');
+            progressBar.innerHTML = `
+                ${stats.pendiente > 0 ? `<div class="progress-segment pendiente" style="width:${pendientePct}%" onclick="filtrarPorEstado('pendiente')">${stats.pendiente}</div>` : ''}
+                ${stats.enCamino > 0 ? `<div class="progress-segment en-camino" style="width:${enCaminoPct}%" onclick="filtrarPorEstado('en-camino')">${stats.enCamino}</div>` : ''}
+                ${stats.entregado > 0 ? `<div class="progress-segment entregado" style="width:${entregadoPct}%" onclick="filtrarPorEstado('entregado')">${stats.entregado}</div>` : ''}
+                ${stats.reprogramado > 0 ? `<div class="progress-segment reprogramado" style="width:${reprogramadoPct}%" onclick="filtrarPorEstado('reprogramado')">${stats.reprogramado}</div>` : ''}
+            `;
+
+            let html = '';
+
+            if (orders.length === 0) {
+                html = '<div class="no-results">No hay envíos con estos filtros</div>';
+            } else if (vistaSimple) {
+                // PUNTO 8: Vista simple mejorada - Solo CABA/Barrio + estado, expandible
+                orders.forEach(({ orders: orderList, shipping, cuentaNombre, cuentaColor }, index) => {
+                    const state = getOrderState(shipping);
+                    const barrio = shipping.receiver_address?.neighborhood?.name || '';
+                    const ciudad = shipping.receiver_address?.city?.name || '';
+                    const zipCode = shipping.receiver_address?.zip_code || '';
+                    const zona = getZonaDetallada(barrio, ciudad, zipCode);
+                    
+                    const calle = shipping.receiver_address?.street_name || '';
+                    const numero = shipping.receiver_address?.street_number || '';
+                    const provincia = shipping.receiver_address?.state?.name || '';
+                    const direccionCompleta = `${calle} ${numero}, ${ciudad}, ${provincia}`;
+                    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(direccionCompleta)}`;
+                    
+                    const fechaEntrega = shipping.shipping_option?.estimated_delivery_time?.date || 
+                                        shipping.shipping_option?.estimated_delivery_final?.date;
+                    const fechaFormateada = formatearFecha(fechaEntrega);
+                    const esHoy = fechaFormateada === 'Hoy';
+                    
+                    const history = shipping.status_history || {};
+                    const fechaCreacion = shipping.date_created;
+                    
+                    const estadoLabel = {
+                        'pendiente': '⏳ Pendiente',
+                        'en-camino': '🚚 En camino',
+                        'entregado': '✅ Entregado',
+                        'cancelado': '❌ Cancelada',
+                        'reprogramado': '🔄 Reprogramado'
+                    };
+                    const estadoTexto = state === 'reprogramado' ? getReprogramadoDetail(shipping).label : estadoLabel[state];
+
+                    const cantidadItems = orderList.length;
+                    const comprador = orderList[0]?.buyer?.nickname || 'N/A';
+                    const orderId = orderList[0]?.id || '';
+                    const orderUrl = `https://www.mercadolibre.com.ar/ventas/${orderId}/detalle`;
+
+                    html += `
+                        <div class="envio-card-simple ${state}" onclick="toggleSimpleDetails(${index})">
+                            <div class="simple-header">
+                                <div class="simple-zona">${zona}</div>
+                                <div class="simple-estado ${state}">${estadoTexto}</div>
+                            </div>
+                            
+                            <div class="simple-details" id="simple-details-${index}">
+                                <div class="envio-header" style="margin-top: 12px;">
+                                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                        ${cantidadItems > 1 ? `<span class="items-count">${cantidadItems} items</span>` : ''}
+                                        <span class="cuenta-badge ${cuentaColor}">${cuentaNombre}</span>
+                                    </div>
+                                    <a href="${orderUrl}" target="_blank" class="order-link" onclick="event.stopPropagation()">
+                                        #${orderId}
+                                    </a>
+                                </div>
+                                
+                                <div class="envio-info">
+                                    <div class="info-item">
+                                        <div class="info-label">📍 Dirección</div>
+                                        <div class="info-value">
+                                            <a href="${googleMapsUrl}" target="_blank" class="direccion-link" onclick="event.stopPropagation()">
+                                                ${calle} ${numero}, ${ciudad}
+                                            </a>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="info-item">
+                                        <div class="info-label">👤 Comprador</div>
+                                        <div class="info-value">${comprador}</div>
+                                    </div>
+                                    
+                                    <div class="info-item">
+                                        <div class="info-label">📅 Entrega</div>
+                                        <div class="info-value ${esHoy ? 'fecha-hoy' : ''}">${fechaFormateada}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="timeline">
+                                    <div class="timeline-item">
+                                        <div class="timeline-dot done"></div>
+                                        <div class="timeline-content">
+                                            <div class="timeline-label">📦 Recibida</div>
+                                            <div class="timeline-time">${formatearSoloHora(fechaCreacion, fechaEntrega) || 'N/A'}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="timeline-item">
+                                        <div class="timeline-dot ${history.date_shipped ? 'done' : 'pending'}"></div>
+                                        <div class="timeline-content">
+                                            <div class="timeline-label">🚚 Enviado</div>
+                                            <div class="timeline-time ${history.date_shipped ? '' : 'pending'}">${formatearSoloHora(history.date_shipped, fechaEntrega) || 'Pendiente'}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="timeline-item">
+                                        <div class="timeline-dot ${history.date_delivered ? 'done' : 'pending'}"></div>
+                                        <div class="timeline-content">
+                                            <div class="timeline-label">✅ Entregado</div>
+                                            <div class="timeline-time ${history.date_delivered ? '' : 'pending'}">${formatearSoloHora(history.date_delivered, fechaEntrega) || 'Pendiente'}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                ${renderTrackingDetail(shipping)}
+                                
+                                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+                                    ${renderReputationBadge(shipping)}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                // Vista completa (original)
+                orders.forEach(({ orders: orderList, shipping, cuentaNombre, cuentaColor }) => {
+                    const state = getOrderState(shipping);
+                    const barrio = shipping.receiver_address?.neighborhood?.name || '';
+                    const ciudad = shipping.receiver_address?.city?.name || '';
+                    const zipCode = shipping.receiver_address?.zip_code || '';
+                    const zona = getZonaDetallada(barrio, ciudad, zipCode);
+                    
+                    const calle = shipping.receiver_address?.street_name || '';
+                    const numero = shipping.receiver_address?.street_number || '';
+                    const provincia = shipping.receiver_address?.state?.name || '';
+                    
+                    const direccionCompleta = `${calle} ${numero}, ${ciudad}, ${provincia}`;
+                    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(direccionCompleta)}`;
+                    
+                    const fechaEntrega = shipping.shipping_option?.estimated_delivery_time?.date || 
+                                        shipping.shipping_option?.estimated_delivery_final?.date;
+                    
+                    const fechaFormateada = formatearFecha(fechaEntrega);
+                    const esHoy = fechaFormateada === 'Hoy';
+                    
+                    const history = shipping.status_history || {};
+                    const fechaCreacion = shipping.date_created;
+                    
+                    const estadoLabel = {
+                        'pendiente': '📋 Pendiente',
+                        'en-camino': '🚚 En camino',
+                        'entregado': '✅ Entregado',
+                        'cancelado': '❌ Cancelada - No despaches',
+                        'reprogramado': '🔄 Reprogramado'
+                    };
+                    const estadoTextoCompleto = state === 'reprogramado' ? getReprogramadoDetail(shipping).label : estadoLabel[state];
+
+                    const cantidadItems = orderList.length;
+                    const comprador = orderList[0]?.buyer?.nickname || 'N/A';
+                    const orderId = orderList[0]?.id || '';
+                    const orderUrl = `https://www.mercadolibre.com.ar/ventas/${orderId}/detalle`;
+
+                    html += `
+                        <div class="envio-card ${state}">
+                            <div class="envio-header">
+                                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                    <span class="estado-badge ${state}">${estadoTextoCompleto}</span>
+                                    ${cantidadItems > 1 ? `<span class="items-count">${cantidadItems} items</span>` : ''}
+                                    <span class="cuenta-badge ${cuentaColor}">${cuentaNombre}</span>
+                                </div>
+                                <a href="${orderUrl}" target="_blank" class="order-link">
+                                    #${orderId}
+                                </a>
+                            </div>
+                            
+                            <div class="envio-info">
+                                <div class="info-item">
+                                    <div class="info-label">🌍 Zona</div>
+                                    <div class="info-value zona-highlight">${zona}</div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">📍 Dirección</div>
+                                    <div class="info-value">
+                                        <a href="${googleMapsUrl}" target="_blank" class="direccion-link">
+                                            ${calle} ${numero}, ${ciudad}
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">👤 Comprador</div>
+                                    <div class="info-value">${comprador}</div>
+                                </div>
+                                
+                                <div class="info-item">
+                                    <div class="info-label">📅 Entrega</div>
+                                    <div class="info-value ${esHoy ? 'fecha-hoy' : ''}">${fechaFormateada}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-dot done"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-label">📦 Recibida</div>
+                                        <div class="timeline-time">${formatearSoloHora(fechaCreacion, fechaEntrega) || 'N/A'}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="timeline-item">
+                                    <div class="timeline-dot ${history.date_shipped ? 'done' : 'pending'}"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-label">🚚 Enviado</div>
+                                        <div class="timeline-time ${history.date_shipped ? '' : 'pending'}">${formatearSoloHora(history.date_shipped, fechaEntrega) || 'Pendiente'}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="timeline-item">
+                                    <div class="timeline-dot ${history.date_delivered ? 'done' : 'pending'}"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-label">✅ Entregado</div>
+                                        <div class="timeline-time ${history.date_delivered ? '' : 'pending'}">${formatearSoloHora(history.date_delivered, fechaEntrega) || 'Pendiente'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            ${renderTrackingDetail(shipping)}
+                            
+                            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+                                ${renderReputationBadge(shipping)}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('content').innerHTML = html;
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-select-wrapper') && dropdownOpen) {
+                toggleDropdown();
+            }
+        });
+
+        // FUNCIONES DEL MAPA
+        let mapShowEnCamino = true;
+        let mapShowReprogramados = true;
+        let mapShowEntregados = true;
+        let leafletMap = null;
+        let markersLayer = null;
+
+        function toggleMapFilter(tipo) {
+            if (tipo === 'en-camino') {
+                mapShowEnCamino = !mapShowEnCamino;
+                const btn = document.getElementById('mapFilterEnCamino');
+                btn.classList.toggle('active-encamino', mapShowEnCamino);
+            } else if (tipo === 'reprogramado') {
+                mapShowReprogramados = !mapShowReprogramados;
+                const btn = document.getElementById('mapFilterReprogramado');
+                btn.classList.toggle('active-reprogramado', mapShowReprogramados);
+            } else if (tipo === 'entregado') {
+                mapShowEntregados = !mapShowEntregados;
+                const btn = document.getElementById('mapFilterEntregado');
+                btn.classList.toggle('active-entregado', mapShowEntregados);
+            }
+            actualizarMapa();
+        }
+
+        function mostrarMapa() {
+            // Contar en camino, reprogramados y entregados
+            let enCamino = allFlexOrders.filter(({ shipping }) => {
+                const state = getOrderState(shipping);
+                return state === 'pendiente' || state === 'en-camino';
+            });
+
+            let reprogramados = allFlexOrders.filter(({ shipping }) => {
+                const state = getOrderState(shipping);
+                return state === 'reprogramado';
+            });
+
+            let entregados = allFlexOrders.filter(({ shipping }) => {
+                const state = getOrderState(shipping);
+                return state === 'entregado';
+            });
+
+            document.getElementById('mapCountEnCamino').textContent = enCamino.length;
+            document.getElementById('mapCountReprogramado').textContent = reprogramados.length;
+            document.getElementById('mapCountEntregado').textContent = entregados.length;
+
+            // Mostrar modal
+            document.getElementById('mapModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+
+            // Inicializar mapa si no existe
+            if (!leafletMap) {
+                // Esperar a que el modal esté visible
+                setTimeout(() => {
+                    try {
+                        leafletMap = L.map('mapFrame').setView([-34.6037, -58.3816], 11);
+                        
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '© OpenStreetMap contributors',
+                            maxZoom: 19
+                        }).addTo(leafletMap);
+                        
+                        markersLayer = L.layerGroup().addTo(leafletMap);
+                        
+                        // Forzar recálculo del tamaño del mapa
+                        setTimeout(() => {
+                            leafletMap.invalidateSize();
+                            actualizarMapa();
+                        }, 100);
+                    } catch (error) {
+                        console.error('Error inicializando mapa:', error);
+                    }
+                }, 200);
+            } else {
+                // Si ya existe, solo actualizar
+                setTimeout(() => {
+                    leafletMap.invalidateSize();
+                    actualizarMapa();
+                }, 100);
+            }
+        }
+
+        function cerrarMapa() {
+            document.getElementById('mapModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function actualizarMapa() {
+            if (!leafletMap || !markersLayer) return;
+
+            // Limpiar marcadores anteriores
+            markersLayer.clearLayers();
+
+            let ordersParaMapa = allFlexOrders.filter(({ shipping, cuentaNombre }) => {
+                const state = getOrderState(shipping);
+                
+                // Excluir canceladas siempre
+                if (state === 'cancelado') return false;
+                
+                // Filtrar por estado según toggles
+                let estadoPasa = false;
+                if (state === 'pendiente' || state === 'en-camino') {
+                    estadoPasa = mapShowEnCamino;
+                } else if (state === 'reprogramado') {
+                    estadoPasa = mapShowReprogramados;
+                } else if (state === 'entregado') {
+                    estadoPasa = mapShowEntregados;
+                }
+                
+                if (!estadoPasa) return false;
+                
+                // APLICAR FILTRO DE CUENTA
+                if (currentCuentaFilter !== 'all' && cuentaNombre !== currentCuentaFilter) {
+                    return false;
+                }
+                
+                // APLICAR FILTRO DE ZONA
+                if (currentZoneFilter !== 'all') {
+                    const barrio = shipping.receiver_address?.neighborhood?.name || '';
+                    const ciudad = shipping.receiver_address?.city?.name || '';
+                    const zipCode = shipping.receiver_address?.zip_code || '';
+                    const zona = getZonaDetallada(barrio, ciudad, zipCode);
+                    
+                    if (currentZoneFilter === 'CABA') {
+                        if (!esCABA(zona)) return false;
+                    } else {
+                        if (zona !== currentZoneFilter) return false;
+                    }
+                }
+                
+                return true;
+            });
+
+            if (ordersParaMapa.length === 0) {
+                return;
+            }
+
+            let bounds = [];
+
+            ordersParaMapa.forEach(({ shipping, orders: orderList, cuentaNombre, cuentaColor }) => {
+                const lat = shipping.receiver_address?.latitude;
+                const lng = shipping.receiver_address?.longitude;
+                
+                if (!lat || !lng) return;
+
+                const state = getOrderState(shipping);
+                const calle = shipping.receiver_address?.street_name || '';
+                const numero = shipping.receiver_address?.street_number || '';
+                const ciudad = shipping.receiver_address?.city?.name || '';
+                const barrio = shipping.receiver_address?.neighborhood?.name || '';
+                const zona = getZonaDetallada(barrio, ciudad, shipping.receiver_address?.zip_code || '');
+                const comprador = orderList[0]?.buyer?.nickname || 'N/A';
+                const orderId = orderList[0]?.id || '';
+                const orderUrl = `https://www.mercadolibre.com.ar/ventas/${orderId}/detalle`;
+                const direccionCompleta = `${calle} ${numero}, ${ciudad}`;
+                const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(direccionCompleta)}`;
+
+                // Color del marcador según estado
+                let markerColor = '#9C27B0'; // pendiente
+                let estadoEmoji = '⏳';
+                let estadoTexto = 'Pendiente';
+                
+                if (state === 'en-camino') {
+                    markerColor = '#00d9ff';
+                    estadoEmoji = '🚚';
+                    estadoTexto = 'En camino';
+                } else if (state === 'entregado') {
+                    markerColor = '#00ff88';
+                    estadoEmoji = '✅';
+                    estadoTexto = 'Entregado';
+                } else if (state === 'reprogramado') {
+                    markerColor = '#FF9800';
+                    estadoEmoji = '🔄';
+                    estadoTexto = getReprogramadoDetail(shipping).short;
+                }
+
+                // Crear icono personalizado
+                const customIcon = L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="background:${markerColor}; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; border:3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">${estadoEmoji}</div>`,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                });
+
+                const marker = L.marker([lat, lng], { icon: customIcon });
+
+                // Badge de cuenta
+                let cuentaBadgeHtml = '';
+                if (cuentaNombre === 'Mikra') {
+                    cuentaBadgeHtml = '<span style="background:#9C27B0; color:white; padding:3px 8px; border-radius:10px; font-size:10px; margin-left:5px;">🟣 Mikra</span>';
+                } else if (cuentaNombre === 'Chaya') {
+                    cuentaBadgeHtml = '<span style="background:#FF6B00; color:white; padding:3px 8px; border-radius:10px; font-size:10px; margin-left:5px;">🟠 Chaya</span>';
+                }
+
+                const popupContent = `
+                    <div style="min-width:200px;">
+                        <div style="margin-bottom:8px;">
+                            <span style="background:${markerColor}; color:${state === 'en-camino' || state === 'entregado' || state === 'reprogramado' ? '#000' : '#fff'}; padding:4px 8px; border-radius:8px; font-size:11px; font-weight:bold;">${estadoEmoji} ${estadoTexto}</span>
+                            ${cuentaBadgeHtml}
+                        </div>
+                        <div style="margin-bottom:6px;"><strong>📍 ${zona}</strong></div>
+                        <div style="margin-bottom:6px;">👤 ${comprador}</div>
+                        <div style="margin-bottom:8px; font-size:12px; color:#aaa;">
+                            <a href="${orderUrl}" target="_blank" style="color:#3483FA; text-decoration:none;">#${orderId}</a>
+                        </div>
+                        <a href="${googleMapsUrl}" target="_blank" style="color:#3483FA; text-decoration:none; font-size:13px; display:block; margin-top:8px; padding:6px; background:#1a1a1a; border-radius:6px; text-align:center;">
+                            🗺️ Abrir en Google Maps<br>
+                            <small style="color:#888;">${direccionCompleta}</small>
+                        </a>
+                    </div>
+                `;
+
+                marker.bindPopup(popupContent);
+                marker.addTo(markersLayer);
+                
+                bounds.push([lat, lng]);
+            });
+
+            // Ajustar vista para mostrar todos los marcadores
+            if (bounds.length > 0) {
+                leafletMap.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
+
+        function getDiaHabilActual() {
+            const hoy = new Date();
+            const diaSemana = hoy.getDay(); // 0=Dom, 6=Sáb
+            
+            // Si es sábado (6), cargar viernes
+            if (diaSemana === 6) {
+                hoy.setDate(hoy.getDate() - 1);
+            }
+            // Si es domingo (0), cargar viernes
+            else if (diaSemana === 0) {
+                hoy.setDate(hoy.getDate() - 2);
+            }
+            
+            hoy.setHours(0, 0, 0, 0);
+            return hoy;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            actualizarLabelDiaAnterior();
+            cargarFlexHoy(); // Ya maneja si es fin de semana internamente
+        });
+    </script>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Registro Service Worker -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('SW registrado:', reg.scope))
+                .catch(err => console.log('SW error:', err));
         });
     }
-    document.getElementById('content').innerHTML=html;
-}
-
-// === MAP ===
-let mapShowEnCamino=true,mapShowReprogramados=true,mapShowEntregados=true,leafletMap=null,markersLayer=null;
-function toggleMapFilter(t){
-    if(t==='en-camino'){mapShowEnCamino=!mapShowEnCamino;document.getElementById('mapFilterEnCamino').classList.toggle('on-camino',mapShowEnCamino)}
-    else if(t==='reprogramado'){mapShowReprogramados=!mapShowReprogramados;document.getElementById('mapFilterReprogramado').classList.toggle('on-reprog',mapShowReprogramados)}
-    else if(t==='entregado'){mapShowEntregados=!mapShowEntregados;document.getElementById('mapFilterEntregado').classList.toggle('on-entreg',mapShowEntregados)}
-    actualizarMapa();
-}
-function mostrarMapa(){
-    document.getElementById('mapCountEnCamino').textContent=allFlexOrders.filter(({shipping})=>{const s=getOrderState(shipping);return s==='pendiente'||s==='en-camino'}).length;
-    document.getElementById('mapCountReprogramado').textContent=allFlexOrders.filter(({shipping})=>getOrderState(shipping)==='reprogramado').length;
-    document.getElementById('mapCountEntregado').textContent=allFlexOrders.filter(({shipping})=>getOrderState(shipping)==='entregado').length;
-    document.getElementById('mapModal').classList.add('open');document.body.style.overflow='hidden';
-    if(!leafletMap){setTimeout(()=>{try{leafletMap=L.map('mapFrame').setView([-34.6037,-58.3816],11);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:19}).addTo(leafletMap);
-        markersLayer=L.layerGroup().addTo(leafletMap);setTimeout(()=>{leafletMap.invalidateSize();actualizarMapa()},100)}catch(e){console.error(e)}},200)}
-    else{setTimeout(()=>{leafletMap.invalidateSize();actualizarMapa()},100)}
-}
-function cerrarMapa(){document.getElementById('mapModal').classList.remove('open');document.body.style.overflow='auto'}
-function actualizarMapa(){
-    if(!leafletMap||!markersLayer)return;markersLayer.clearLayers();let bounds=[];
-    allFlexOrders.filter(({shipping,cuentaNombre})=>{
-        const s=getOrderState(shipping);if(s==='cancelado')return false;
-        let pass=false;if(s==='pendiente'||s==='en-camino')pass=mapShowEnCamino;else if(s==='reprogramado')pass=mapShowReprogramados;else if(s==='entregado')pass=mapShowEntregados;
-        if(!pass)return false;if(currentCuentaFilter!=='all'&&cuentaNombre!==currentCuentaFilter)return false;
-        if(currentZoneFilter!=='all'){const z=getZonaDetallada(shipping.receiver_address?.neighborhood?.name||'',shipping.receiver_address?.city?.name||'',shipping.receiver_address?.zip_code||'');
-            if(currentZoneFilter==='CABA'){if(!esCABA(z))return false}else{if(z!==currentZoneFilter)return false}}
-        return true;
-    }).forEach(({shipping,orders:oList,cuentaNombre})=>{
-        const lat=shipping.receiver_address?.latitude,lng=shipping.receiver_address?.longitude;if(!lat||!lng)return;
-        const s=getOrderState(shipping);const calle=shipping.receiver_address?.street_name||'';const num=shipping.receiver_address?.street_number||'';
-        const ciudad=shipping.receiver_address?.city?.name||'';const barrio=shipping.receiver_address?.neighborhood?.name||'';
-        const zona=getZonaDetallada(barrio,ciudad,shipping.receiver_address?.zip_code||'');
-        const comp=oList[0]?.buyer?.nickname||'';const oid=oList[0]?.id||'';
-        const dir=`${calle} ${num}, ${ciudad}`;const gmap=`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dir)}`;
-        let color='#a855f7',emoji='⏳',txt='Pendiente';
-        if(s==='en-camino'){color='#22d3ee';emoji='🚚';txt='En camino'}
-        else if(s==='entregado'){color='#34d399';emoji='✅';txt='Entregado'}
-        else if(s==='reprogramado'){color='#fb923c';emoji='🔄';txt=getReprogramadoDetail(shipping).short}
-        const icon=L.divIcon({className:'',html:`<div style="background:${color};width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)">${emoji}</div>`,iconSize:[28,28],iconAnchor:[14,14]});
-        const m=L.marker([lat,lng],{icon});
-        m.bindPopup(`<div style="min-width:180px;font-family:DM Sans,sans-serif;font-size:12px">
-            <div style="margin-bottom:6px"><span style="background:${color};color:${s==='en-camino'||s==='entregado'||s==='reprogramado'?'#000':'#fff'};padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600">${emoji} ${txt}</span></div>
-            <div style="font-weight:600;margin-bottom:4px">${zona}</div>
-            <div style="color:#8e8e96;margin-bottom:4px">${comp}</div>
-            <a href="${gmap}" target="_blank" style="color:#4a9eff;font-size:11px">${dir}</a>
-        </div>`);
-        m.addTo(markersLayer);bounds.push([lat,lng]);
-    });
-    if(bounds.length)leafletMap.fitBounds(bounds,{padding:[40,40]});
-}
-
-document.addEventListener('click',e=>{if(!e.target.closest('.zone-select-wrap')&&dropdownOpen)toggleDropdown()});
-
-window.addEventListener('DOMContentLoaded',()=>{actualizarLabelDiaAnterior();cargarFlexHoy()});
-</script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    </script>
 </body>
 </html>
